@@ -1,0 +1,1772 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>الالتزامات المالية</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --ink:#0f2430;
+  --ink-2:#1b3a4a;
+  --bg:#eceff1;
+  --surface:#ffffff;
+  --line:#dde4e8;
+  --teal:#00a896;
+  --teal-dark:#00806f;
+  --gold:#d3a03c;
+  --gold-light:#f0cf87;
+  --alert:#c0473f;
+  --muted:#6b8592;
+  --ok:#2e8b57;
+  --radius:16px;
+  --shadow:0 1px 3px rgba(15,36,48,.08),0 6px 20px rgba(15,36,48,.05);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;
+  background:var(--bg);color:var(--ink);
+  font-size:15px;line-height:1.6;
+  padding-bottom:40px;
+}
+.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+
+/* ---------- header ---------- */
+header{
+  background:linear-gradient(135deg,var(--ink) 0%,var(--ink-2) 100%);
+  color:#fff;padding:18px 16px 22px;
+  border-bottom:3px solid var(--teal);
+}
+.head-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.brand{display:flex;align-items:center;gap:9px;font-weight:600;font-size:15px}
+.brand .mark{
+  width:26px;height:26px;border-radius:7px;
+  background:linear-gradient(180deg,rgba(255,255,255,.15) 45%,var(--gold) 45%);
+  border:1.5px solid rgba(255,255,255,.5);
+}
+.hero{margin-top:16px}
+.hero .label{font-size:12px;color:#9dc0cd;letter-spacing:.02em}
+.hero .amount{font-size:40px;font-weight:700;line-height:1.15;letter-spacing:-.02em}
+.hero .amount small{font-size:16px;font-weight:500;color:#9dc0cd;margin-inline-start:4px}
+.hero .sub{font-size:12.5px;color:#b8d3dd;margin-top:2px}
+.pill{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:11.5px;padding:3px 9px;border-radius:99px;
+  background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);
+}
+.pill.warn{background:rgba(192,71,63,.9);border-color:transparent}
+.pill.ok{background:rgba(46,139,87,.85);border-color:transparent}
+
+/* ---------- tabs ---------- */
+nav{
+  position:sticky;top:0;z-index:40;background:var(--surface);
+  border-bottom:1px solid var(--line);
+  display:flex;overflow-x:auto;scrollbar-width:none;
+  box-shadow:0 2px 8px rgba(15,36,48,.05);
+}
+nav::-webkit-scrollbar{display:none}
+nav button{
+  flex:0 0 auto;background:none;border:none;cursor:pointer;
+  font-family:inherit;font-size:13.5px;font-weight:500;color:var(--muted);
+  padding:13px 15px;border-bottom:3px solid transparent;white-space:nowrap;
+}
+nav button.active{color:var(--ink);border-bottom-color:var(--teal);font-weight:600}
+
+main{padding:16px 14px;max-width:900px;margin:0 auto}
+.tab{display:none}
+.tab.active{display:block}
+
+/* ---------- generic ---------- */
+.card{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:12px}
+.card h3{font-size:14px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:7px}
+.card h3::before{content:"";width:3px;height:14px;background:var(--teal);border-radius:2px}
+.muted{color:var(--muted);font-size:12.5px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sep{height:1px;background:var(--line);margin:12px 0}
+
+/* ---------- banners ---------- */
+.banner{
+  display:flex;gap:10px;align-items:flex-start;
+  border-radius:12px;padding:11px 13px;margin-bottom:10px;font-size:13px;
+  border-inline-start:4px solid;
+}
+.banner b{display:block;font-size:13.5px;margin-bottom:1px}
+.banner.late{background:#fbeceb;border-color:var(--alert);color:#7d2a25}
+.banner.soon{background:#fdf5e4;border-color:var(--gold);color:#7a5a13}
+.banner.over{background:#eef4fb;border-color:#2b7fa3;color:#1d4d66}
+.banner.good{background:#eaf5ef;border-color:var(--ok);color:#20613c}
+
+/* ---------- KPI ---------- */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:12px}
+.kpi{background:var(--surface);border-radius:14px;padding:12px 10px;box-shadow:var(--shadow);text-align:center}
+.kpi .v{font-size:19px;font-weight:700;letter-spacing:-.01em}
+.kpi .k{font-size:10.5px;color:var(--muted);margin-top:1px}
+
+/* ---------- vessel ---------- */
+.vessels{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:11px}
+.vessel{
+  background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);
+  overflow:hidden;cursor:pointer;position:relative;
+  border:1px solid transparent;transition:border-color .15s,transform .15s;
+}
+.vessel:hover{border-color:var(--teal)}
+.vessel:active{transform:scale(.985)}
+.vessel .tank{
+  position:relative;height:104px;
+  background:repeating-linear-gradient(180deg,#f2f5f7 0 13px,#eef2f5 13px 26px);
+}
+.vessel .fill{
+  position:absolute;bottom:0;left:0;right:0;
+  background:linear-gradient(180deg,var(--gold-light),var(--gold));
+  transition:height .6s cubic-bezier(.22,1,.36,1);
+}
+.vessel .fill::before{
+  content:"";position:absolute;top:-3px;left:0;right:0;height:3px;
+  background:rgba(255,255,255,.55);
+}
+.vessel .tank-txt{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-shadow:0 1px 2px rgba(255,255,255,.7);
+}
+.vessel .pct{font-size:21px;font-weight:700}
+.vessel .of{font-size:11px;color:var(--ink);opacity:.75}
+.vessel .body{padding:10px 11px 12px}
+.vessel .nm{font-size:13.5px;font-weight:600;line-height:1.35;
+  display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.vessel .meta{font-size:11px;color:var(--muted);margin-top:3px;display:flex;justify-content:space-between;gap:6px}
+.vessel .share{font-size:11.5px;color:var(--teal-dark);font-weight:600;margin-top:5px}
+.vessel .lag{font-size:11.5px;color:var(--alert);font-weight:600;margin-top:2px}
+.tag{
+  position:absolute;top:8px;inset-inline-start:8px;
+  font-size:10px;padding:2px 7px;border-radius:99px;
+  background:rgba(15,36,48,.72);color:#fff;font-weight:500;
+}
+.tag.due{background:var(--alert)}
+.tag.debt{background:#8a5a12}
+.tag.ready{background:var(--ok)}
+
+/* ---------- forms ---------- */
+label{display:block;font-size:12px;font-weight:500;color:var(--muted);margin-bottom:4px}
+input,select,textarea{
+  width:100%;font-family:inherit;font-size:14.5px;color:var(--ink);
+  padding:10px 11px;border:1.5px solid var(--line);border-radius:11px;
+  background:#fafcfd;outline:none;
+}
+input:focus,select:focus,textarea:focus{border-color:var(--teal);background:#fff}
+.field{margin-bottom:11px}
+button.btn{
+  font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;
+  padding:11px 16px;border-radius:11px;border:none;width:100%;
+  background:var(--teal);color:#fff;
+}
+button.btn:hover{background:var(--teal-dark)}
+button.btn.dark{background:var(--ink)}
+button.btn.ghost{background:#fff;color:var(--ink);border:1.5px solid var(--line)}
+button.btn.danger{background:var(--alert)}
+button.btn.gold{background:var(--gold);color:#3a2a06}
+button.btn.sm{padding:8px 12px;font-size:13px;width:auto}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap}
+.btnrow>*{flex:1 1 130px}
+
+/* ---------- choice ---------- */
+.choice{
+  border:1.5px solid var(--line);border-radius:12px;padding:11px 12px;
+  cursor:pointer;margin-bottom:8px;background:#fafcfd;
+}
+.choice:hover{border-color:var(--teal)}
+.choice.sel{border-color:var(--teal);background:#effaf8}
+.choice b{font-size:13.5px;display:block}
+.choice span{font-size:12px;color:var(--muted)}
+
+/* ---------- list rows ---------- */
+.lrow{display:flex;justify-content:space-between;gap:10px;padding:11px 0;border-bottom:1px solid var(--line)}
+.lrow:last-child{border-bottom:none}
+.lrow .t{font-size:13.5px;font-weight:500}
+.lrow .s{font-size:11.5px;color:var(--muted)}
+.lrow .a{font-size:14px;font-weight:700;white-space:nowrap}
+.pos{color:var(--ok)}.neg{color:var(--alert)}
+
+/* ---------- allocation preview ---------- */
+.alloc{background:#f6f9fa;border-radius:12px;padding:11px 12px;margin-top:10px}
+.alloc .ar{display:flex;justify-content:space-between;font-size:13px;padding:4px 0}
+.alloc .ar b{font-weight:600}
+.alloc .tot{border-top:1px dashed var(--line);margin-top:5px;padding-top:6px;font-weight:700}
+
+/* ---------- bars ---------- */
+.bar{height:7px;background:var(--line);border-radius:99px;overflow:hidden;margin-top:5px}
+.bar i{display:block;height:100%;background:var(--teal);border-radius:99px}
+
+/* ---------- modal ---------- */
+.scrim{position:fixed;inset:0;background:rgba(15,36,48,.55);z-index:100;
+  display:none;align-items:flex-end;justify-content:center}
+.scrim.on{display:flex}
+.sheet{
+  background:var(--surface);width:100%;max-width:560px;
+  border-radius:20px 20px 0 0;padding:18px 16px 24px;
+  max-height:92vh;overflow-y:auto;
+  animation:up .22s cubic-bezier(.22,1,.36,1);
+}
+@keyframes up{from{transform:translateY(28px);opacity:.4}to{transform:none;opacity:1}}
+.sheet h2{font-size:17px;font-weight:700;margin-bottom:3px}
+.sheet .lead{font-size:12.5px;color:var(--muted);margin-bottom:14px}
+.grab{width:38px;height:4px;background:var(--line);border-radius:99px;margin:0 auto 14px}
+
+.empty{text-align:center;padding:34px 18px;color:var(--muted)}
+.empty .big{font-size:15px;font-weight:600;color:var(--ink);margin-bottom:4px}
+
+.toast{
+  position:fixed;bottom:18px;left:50%;transform:translateX(-50%);
+  background:var(--ink);color:#fff;padding:11px 18px;border-radius:99px;
+  font-size:13.5px;z-index:200;opacity:0;pointer-events:none;transition:opacity .2s;
+}
+.toast.on{opacity:1}
+
+/* ---------- بوابة الدخول ---------- */
+#gate{position:fixed;inset:0;z-index:500;overflow-y:auto;
+  background:linear-gradient(135deg,var(--ink) 0%,var(--ink-2) 100%);
+  display:flex;align-items:center;justify-content:center;padding:18px}
+#gate.off{display:none}
+#gate .box{background:var(--surface);border-radius:20px;padding:22px 18px;
+  width:100%;max-width:420px;box-shadow:0 22px 60px rgba(0,0,0,.35)}
+#gate h1{font-size:19px;font-weight:700;margin-bottom:3px;display:flex;align-items:center;gap:9px}
+#gate h1 .mark{width:24px;height:24px;border-radius:7px;
+  background:linear-gradient(180deg,#eef2f5 45%,var(--gold) 45%);border:1.5px solid var(--line)}
+#gate .lead{font-size:12.5px;color:var(--muted);margin-bottom:16px;line-height:1.65}
+#gate .alt{text-align:center;font-size:12.5px;color:var(--muted);margin-top:13px}
+#gate .alt a{color:var(--teal-dark);font-weight:600;text-decoration:none;cursor:pointer}
+#gate .err{background:#fbeceb;color:#7d2a25;border-inline-start:4px solid var(--alert);
+  border-radius:10px;padding:10px 12px;font-size:12.5px;margin-bottom:12px}
+#gate .note{background:#eef4fb;color:#1d4d66;border-inline-start:4px solid #2b7fa3;
+  border-radius:10px;padding:10px 12px;font-size:12.5px;margin-bottom:12px}
+.syncpill{font-size:11px;padding:3px 9px;border-radius:99px;background:rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.18);white-space:nowrap}
+.syncpill.bad{background:var(--alert);border-color:transparent}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media(max-width:560px){.kpis{grid-template-columns:1fr 1fr}}
+@media(max-width:380px){.hero .amount{font-size:34px}}
+</style>
+</head>
+<body>
+
+<div id="gate"><div class="box" id="gateBox"></div></div>
+
+<header>
+  <div class="head-top">
+    <div class="brand"><span class="mark"></span> الالتزامات المالية</div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <span class="syncpill" id="syncPill" style="display:none"></span>
+      <span class="pill" id="periodPill">—</span>
+    </div>
+  </div>
+  <div class="hero">
+    <div class="label">المطلوب تحويله هذا الشهر</div>
+    <div class="amount num" id="heroAmount">0<small>ريال</small></div>
+    <div class="sub" id="heroSub">أضف أول التزام لتبدأ الخطة</div>
+  </div>
+</header>
+
+<nav id="nav"></nav>
+
+<main>
+  <!-- ============ لوحة الحالة ============ -->
+  <section class="tab active" id="tab-home">
+    <div id="banners"></div>
+    <div class="kpis">
+      <div class="kpi"><div class="v num" id="kSaved">0</div><div class="k">المدخر</div></div>
+      <div class="kpi"><div class="v num" id="kTarget">0</div><div class="k">إجمالي الالتزامات</div></div>
+      <div class="kpi"><div class="v num" id="kFree">0</div><div class="k">رصيد حر</div></div>
+      <div class="kpi"><div class="v num" id="kLag">0</div><div class="k">متأخر عن الجدول</div></div>
+    </div>
+    <div class="card" id="homeVesselsCard">
+      <h3>الالتزامات النشطة</h3>
+      <div class="vessels" id="homeVessels"></div>
+    </div>
+  </section>
+
+  <!-- ============ الالتزامات ============ -->
+  <section class="tab" id="tab-goals">
+    <div class="card">
+      <h3>إضافة التزام</h3>
+      <div class="field"><label>الاسم</label><input id="gName" placeholder="بطارية السيارة"></div>
+      <div class="grid2">
+        <div class="field"><label>القيمة التقديرية</label><input id="gTarget" type="number" inputmode="decimal" placeholder="1000"></div>
+        <div class="field"><label>تاريخ الاستحقاق</label><input id="gDue" type="date"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>التصنيف</label><select id="gCat"></select></div>
+        <div class="field"><label>رصيد ابتدائي</label><input id="gSaved" type="number" inputmode="decimal" placeholder="0"></div>
+      </div>
+      <button class="btn" onclick="previewAddGoal()">أضف الالتزام</button>
+    </div>
+    <div class="card">
+      <h3>كل الالتزامات</h3>
+      <div class="muted" style="margin-bottom:10px">اسحب الأولوية من الإعدادات. اضغط أي التزام لفتح تفاصيله.</div>
+      <div class="vessels" id="allVessels"></div>
+    </div>
+    <div class="card" id="archivedCard">
+      <h3>المؤرشفة</h3>
+      <div id="archivedList"></div>
+    </div>
+  </section>
+
+  <!-- ============ التحويل ============ -->
+  <section class="tab" id="tab-transfer">
+    <div class="card">
+      <h3>تحويل هذا الشهر</h3>
+      <div id="transferState"></div>
+    </div>
+    <div class="card">
+      <h3>الجدول الزمني المتوقع</h3>
+      <div class="muted" style="margin-bottom:10px">توزيع المبلغ الشهري على الالتزامات حتى آخر موعد استحقاق.</div>
+      <div id="forecast"></div>
+    </div>
+  </section>
+
+  <!-- ============ الأمنيات ============ -->
+  <section class="tab" id="tab-wishes">
+    <div class="card">
+      <h3>إضافة أمنية</h3>
+      <div class="muted" style="margin-bottom:11px">الأمنيات لا تدخل في أي حساب. تتحول إلى التزام فقط عندما تقرر البدء فيها.</div>
+      <div class="field"><label>الاسم</label><input id="wName" placeholder="ساعة"></div>
+      <div class="field"><label>قيمة تقديرية (اختياري)</label><input id="wEst" type="number" inputmode="decimal"></div>
+      <button class="btn ghost" onclick="addWish()">أضف للأمنيات</button>
+    </div>
+    <div class="card"><h3>القائمة</h3><div id="wishList"></div></div>
+  </section>
+
+  <!-- ============ السجل ============ -->
+  <section class="tab" id="tab-log">
+    <div class="card"><h3>السجل الكامل</h3><div id="logList"></div></div>
+  </section>
+
+  <!-- ============ التقارير ============ -->
+  <section class="tab" id="tab-reports">
+    <div class="card"><h3>حسب التصنيف</h3><div id="catReport"></div></div>
+    <div class="card">
+      <h3>مطابقة الرصيد</h3>
+      <div class="muted" id="recStatus" style="margin-bottom:11px"></div>
+      <div class="field"><label>الرصيد الفعلي</label><input id="recBal" type="number" inputmode="decimal"></div>
+      <button class="btn ghost" onclick="doReconcile()">قارن</button>
+      <div id="recResult"></div>
+    </div>
+    <div class="card"><h3>سجل المطابقات</h3><div id="recLog"></div></div>
+  </section>
+
+  <!-- ============ الإعدادات ============ -->
+  <section class="tab" id="tab-settings">
+    <div class="card">
+      <h3>الأساسيات</h3>
+      <div class="grid2">
+        <div class="field"><label>يوم الراتب</label><input id="sPayday" type="number" min="1" max="28"></div>
+        <div class="field"><label>القدرة الشهرية</label><input id="sCapacity" type="number" inputmode="decimal"></div>
+      </div>
+      <div class="field"><label>نمط المبلغ الشهري</label>
+        <select id="sMode">
+          <option value="level">ثابت — مبلغ واحد لا يتغير (موصى به)</option>
+          <option value="declining">متناقص — ينخفض كلما اكتمل التزام</option>
+        </select>
+      </div>
+      <div class="field"><label>ترتيب التوزيع عند النقص</label>
+        <select id="sPolicy">
+          <option value="nearest">الأقرب موعدًا أولًا</option>
+          <option value="priority">حسب الأولوية التي أحددها</option>
+        </select>
+      </div>
+      <button class="btn" onclick="saveSettings()">احفظ الإعدادات</button>
+    </div>
+    <div class="card">
+      <h3>ترتيب الأولوية</h3>
+      <div class="muted" style="margin-bottom:10px">يُستخدم عند اختيار «حسب الأولوية». الأعلى أولًا.</div>
+      <div id="priorityList"></div>
+    </div>
+    <div class="card">
+      <h3>التصنيفات</h3>
+      <div class="field"><input id="newCat" placeholder="تصنيف جديد"></div>
+      <button class="btn ghost sm" onclick="addCat()">أضف</button>
+      <div id="catList" style="margin-top:11px"></div>
+    </div>
+    <div class="card">
+      <h3>الحساب</h3>
+      <div id="acctBox"></div>
+    </div>
+    <div class="card">
+      <h3>التذكير بالتقويم</h3>
+      <div class="muted" style="margin-bottom:11px">يحمّل ملفًا تفتحه فيضيف تذكير التحويل الشهري ومواعيد الالتزامات إلى تقويم جهازك.</div>
+      <button class="btn gold" onclick="exportICS()">حمّل ملف التقويم</button>
+    </div>
+    <div class="card">
+      <h3>النسخة الاحتياطية</h3>
+      <div class="muted" id="backupStatus" style="margin-bottom:11px"></div>
+      <div class="btnrow">
+        <button class="btn dark" onclick="exportData()">تصدير البيانات</button>
+        <button class="btn ghost" onclick="document.getElementById('impFile').click()">استيراد</button>
+      </div>
+      <input type="file" id="impFile" accept=".json" style="display:none" onchange="importData(event)">
+      <div class="sep"></div>
+      <button class="btn danger" onclick="wipeAll()">مسح كل البيانات</button>
+    </div>
+  </section>
+</main>
+
+<div class="scrim" id="scrim" onclick="if(event.target===this)closeSheet()">
+  <div class="sheet" id="sheet"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ==================================================================
+   التخزين
+================================================================== */
+/* ═══════════════════════════════════════════════════════════════
+   اضبط هذين السطرين مرة واحدة قبل الرفع، ولن يُطلب من أحد إعداد شيء.
+   اتركهما فارغين ليطلب التطبيق من كل مستخدم إدخالهما بنفسه.
+   المفتاح العلني آمن هنا — الحماية في سياسات العزل بقاعدة البيانات.
+   لا تضع أبدًا مفتاح service_role أو sb_secret.
+   ═══════════════════════════════════════════════════════════════ */
+const SUPA_URL = '';   // مثال: 'https://abcdefgh.supabase.co'
+const SUPA_KEY = '';   // مثال: 'sb_publishable_xxxxxxxx'
+
+const KEY='sinking_funds_v1';
+const CFG='sinking_funds_cfg';
+let sb=null, user=null, mode='local';
+
+function getCfg(){
+  if(SUPA_URL && SUPA_KEY) return {url:SUPA_URL, key:SUPA_KEY, fixed:true};
+  try{ return JSON.parse(localStorage.getItem(CFG)||'null'); }catch(e){ return null; }
+}
+function setCfg(c){ try{ localStorage.setItem(CFG, JSON.stringify(c)); }catch(e){} }
+
+async function loadRaw(){
+  if(mode==='cloud' && sb && user){
+    const {data,error}=await sb.from('plans').select('data').eq('user_id',user.id).maybeSingle();
+    if(error) throw error;
+    return data && data.data ? JSON.stringify(data.data) : null;
+  }
+  try{ return localStorage.getItem(KEY); }catch(e){ return null; }
+}
+async function saveRaw(v){
+  if(mode==='cloud' && sb && user){
+    const {error}=await sb.from('plans').upsert(
+      {user_id:user.id, data:JSON.parse(v), updated_at:new Date().toISOString()},
+      {onConflict:'user_id'});
+    if(error) throw error;
+    return;
+  }
+  try{ localStorage.setItem(KEY,v); }catch(e){}
+}
+
+/* حفظ مؤجّل بمؤشر حالة — لا حفظ صامت فاشل */
+let saveTimer=null, saving=false;
+function syncState(t,bad){
+  const el=document.getElementById('syncPill'); if(!el) return;
+  if(mode!=='cloud'){ el.style.display='none'; return; }
+  el.style.display=''; el.textContent=t; el.className='syncpill'+(bad?' bad':'');
+}
+function flushSave(){
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(async()=>{
+    if(saving) { flushSave(); return; }
+    saving=true; syncState('يحفظ…');
+    try{ await saveRaw(JSON.stringify(S)); syncState('محفوظ'); }
+    catch(e){ syncState('فشل الحفظ',true); toast('تعذّر الحفظ — تحقق من الاتصال'); }
+    finally{ saving=false; }
+  }, 500);
+}
+
+const DEF = {
+  settings:{ payday:27, capacity:0, mode:'level', policy:'nearest',
+    categories:['سيارة','بيت','فواتير','اتصالات','ملابس','ترفيه','صحة','تعليم','أخرى'] },
+  goals:[], transfers:[], spends:[], loans:[], wishes:[], recs:[],
+  free:0, carry:0, seq:1, lastExport:null, lastRec:null, missed:[], expected:null
+};
+let S = JSON.parse(JSON.stringify(DEF));
+
+async function boot(){
+  const raw = await loadRaw();
+  if(raw){ try{ S = Object.assign(JSON.parse(JSON.stringify(DEF)), JSON.parse(raw)); }catch(e){} }
+  buildNav(); renderAll();
+}
+function save(){ if(mode==='cloud') flushSave(); else saveRaw(JSON.stringify(S)); }
+const nid = ()=> 'x'+(S.seq++)+Date.now().toString(36).slice(-4);
+/* يمنع كسر الواجهة إذا احتوى اسم أو ملاحظة على علامة اقتباس أو رمز HTML */
+const E = v => String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+
+/* ==================================================================
+   أدوات
+================================================================== */
+const R = n => Math.round((Number(n)||0)*100)/100;
+const fmt = n => R(n).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2});
+const money = n => fmt(n)+' ر.س';
+const today = ()=>{ const d=new Date(); d.setHours(0,0,0,0); return d; };
+const parseD = s => { if(!s) return null; const [y,m,d]=s.split('-').map(Number); const x=new Date(y,m-1,d); x.setHours(0,0,0,0); return x; };
+const isoD = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const dim = (y,m)=> new Date(y,m+1,0).getDate();
+const arD = s => { const d=parseD(s); return d? d.toLocaleDateString('ar-SA-u-ca-gregory',{year:'numeric',month:'short',day:'numeric'}) : '—'; };
+
+function paydayOf(y,m){ const p=Math.min(S.settings.payday, dim(y,m)); const d=new Date(y,m,p); d.setHours(0,0,0,0); return d; }
+/* الراتب القادم: أول يوم راتب من اليوم فصاعدًا. لا نخطط أبدًا على راتب مضى واستُلم. */
+function periodStart(){ const t=today(); let d=paydayOf(t.getFullYear(),t.getMonth());
+  if(d<t) d=paydayOf(t.getFullYear(),t.getMonth()+1); return d; }
+function stepPayday(d,n){ return paydayOf(d.getFullYear(), d.getMonth()+n); }
+
+function currentTransfer(){ const ps=isoD(periodStart()); return S.transfers.find(t=>t.period===ps); }
+
+/* عدد الرواتب المتبقية التي يمكن أن تموّل الالتزام */
+function monthsLeft(dueStr){
+  const due = parseD(dueStr); if(!due) return 1;
+  let d = currentTransfer() ? stepPayday(periodStart(),1) : periodStart();
+  /* الراتب الذي ينزل يوم الاستحقاق نفسه لا يُحتسب — المال يجب أن يكون جاهزًا قبل الموعد */
+  let n=0; while(d<due && n<600){ n++; d=stepPayday(d,1); }
+  return Math.max(n,1);
+}
+const daysLeft = s => Math.ceil((parseD(s)-today())/86400000);
+
+/* ==================================================================
+   الحسابات
+================================================================== */
+const active = ()=> S.goals.filter(g=>g.status==='active');
+const remain = g => Math.max(0, R(g.target - g.saved));
+const pace   = g => R(remain(g)/monthsLeft(g.due));
+
+function ordered(policy){
+  const list = active().slice();
+  if((policy||S.settings.policy)==='priority')
+    list.sort((a,b)=> (a.pri??999)-(b.pri??999) || parseD(a.due)-parseD(b.due));
+  else list.sort((a,b)=> parseD(a.due)-parseD(b.due));
+  return list;
+}
+
+/* المبلغ الثابت: أعلى (مجموع المتبقي حتى موعد د) ÷ د */
+function levelAmount(){
+  const list = active().slice().sort((a,b)=> parseD(a.due)-parseD(b.due));
+  let cum=0, lvl=0;
+  for(const g of list){ cum += remain(g); lvl = Math.max(lvl, cum/monthsLeft(g.due)); }
+  return R(lvl);
+}
+const decliningAmount = ()=> R(active().reduce((s,g)=>s+pace(g),0));
+const baseMonthly = ()=> S.settings.mode==='level' ? levelAmount() : decliningAmount();
+
+/* كم كان يفترض أن يتجمّع في الالتزام حتى اليوم، وكم أنت متأخر عنه */
+function behind(g){
+  const st=parseD(g.start||g.created), due=parseD(g.due), t=today();
+  if(!st||!due||t<=st) return 0;
+  const total=due-st; if(total<=0) return 0;
+  const gone=Math.min(t-st,total);
+  return Math.max(0, R(R(g.target*gone/total)-g.saved));
+}
+const totalBehind = ()=> R(active().reduce((s,g)=>s+behind(g),0));
+const missedTotal = ()=> R((S.missed||[]).reduce((s,m)=>s+m.amount,0));
+
+/* رصد الرواتب التي مرّت دون تسجيل تحويل */
+function checkMissed(){
+  S.missed=S.missed||[];
+  const np=isoD(periodStart());
+  if(!S.expected){ S.expected={period:np,amount:requiredNow()}; save(); return; }
+  if(S.expected.period!==np){
+    /* قد يمر أكثر من راتب دون فتح التطبيق — نسجّلها كلها لا الأخير فقط */
+    let d=parseD(S.expected.period), guard=0;
+    while(d && isoD(d)!==np && guard++<120){
+      const per=isoD(d);
+      const paid=S.transfers.some(t=>t.period===per);
+      if(!paid && S.expected.amount>0 && !S.missed.some(m=>m.period===per))
+        S.missed.push({period:per, amount:R(S.expected.amount)});
+      d=stepPayday(d,1);
+    }
+    S.expected={period:np,amount:requiredNow()};
+    save();
+  } else if(Math.abs(S.expected.amount-requiredNow())>0.01){
+    S.expected.amount=requiredNow(); save();
+  }
+}
+
+/* أقساط الاستلاف المستحقة هذا الشهر */
+function loanDue(){
+  let t=0;
+  for(const l of S.loans){
+    const rem = R(l.amount - l.repaid); if(rem<=0) continue;
+    t += l.mode==='direct' ? rem : Math.min(rem, R(l.amount/l.installments));
+  }
+  return R(t);
+}
+const requiredNow = ()=> R(baseMonthly() + loanDue() + S.carry);
+
+/* توزيع مبلغ على الالتزامات */
+function allocate(amount, opts){
+  opts = opts||{};
+  const order = ordered(opts.policy);
+  let left = R(amount);
+  const map = {}; order.forEach(g=>map[g.id]=0);
+  const repay = []; let orphan = 0;
+
+  /* 1) أقساط الاستلاف أولًا */
+  if(!opts.skipLoans){
+    for(const l of S.loans){
+      const rem = R(l.amount-l.repaid); if(rem<=0) continue;
+      const want = l.mode==='direct' ? rem : Math.min(rem, R(l.amount/l.installments));
+      const take = Math.min(want,left); if(take<=0) continue;
+      left = R(left-take); repay.push({loanId:l.id, goalId:l.goalId, amount:R(take)});
+      /* إن كان الالتزام مؤرشفًا أو محذوفًا يعود المال للرصيد الحر بدل أن يتبخّر */
+      if(map[l.goalId]!==undefined) map[l.goalId]=R(map[l.goalId]+take);
+      else orphan = R(orphan+take);
+    }
+  }
+  /* 2) الوتيرة الذاتية لكل التزام بالترتيب */
+  for(const g of order){
+    const cap = Math.max(0, R(remain(g)-map[g.id]));
+    const take = Math.min(pace(g), cap, left);
+    if(take>0){ map[g.id]=R(map[g.id]+take); left=R(left-take); }
+  }
+  /* 3) الفائض للالتزامات غير المكتملة بالترتيب */
+  if(!opts.stopAtPace){
+    for(const g of order){
+      if(left<=0) break;
+      const cap = Math.max(0, R(remain(g)-map[g.id]));
+      const take = Math.min(cap,left);
+      if(take>0){ map[g.id]=R(map[g.id]+take); left=R(left-take); }
+    }
+  }
+  const items = order.filter(g=>map[g.id]>0).map(g=>({goalId:g.id, name:g.name, amount:map[g.id]}));
+  return { items, repay, leftover:R(left+orphan) };
+}
+
+function applyAllocation(res){
+  for(const it of res.items){ const g=S.goals.find(x=>x.id===it.goalId); if(g) g.saved=R(g.saved+it.amount); }
+  for(const rp of res.repay){ const l=S.loans.find(x=>x.id===rp.loanId); if(l) l.repaid=R(l.repaid+rp.amount); }
+}
+
+/* ==================================================================
+   الواجهة العامة
+================================================================== */
+const TABS=[['home','لوحة الحالة'],['goals','الالتزامات'],['transfer','التحويل'],
+            ['wishes','الأمنيات'],['log','السجل'],['reports','التقارير'],['settings','الإعدادات']];
+let curTab='home';
+function buildNav(){
+  document.getElementById('nav').innerHTML = TABS.map(([k,l])=>
+    `<button data-k="${k}" onclick="go('${k}')">${l}</button>`).join('');
+  markNav();
+}
+function markNav(){
+  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active', b.dataset.k===curTab));
+  TABS.forEach(([k])=>document.getElementById('tab-'+k).classList.toggle('active', k===curTab));
+}
+function go(k){ curTab=k; markNav(); window.scrollTo({top:0,behavior:'smooth'}); }
+
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('on');
+  clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('on'),2200); }
+
+function openSheet(html){ document.getElementById('sheet').innerHTML='<div class="grab"></div>'+html;
+  document.getElementById('scrim').classList.add('on'); }
+function closeSheet(){ document.getElementById('scrim').classList.remove('on'); }
+
+function renderAll(){
+  checkMissed();
+  renderHeader(); renderBanners(); renderHome(); renderGoals();
+  renderTransfer(); renderForecast(); renderWishes(); renderLog();
+  renderReports(); renderSettings();
+}
+
+/* ---------- الترويسة ---------- */
+function renderHeader(){
+  const req = requiredNow();
+  document.getElementById('heroAmount').innerHTML = fmt(req)+'<small>ريال</small>';
+  const ct = currentTransfer();
+  const pill = document.getElementById('periodPill');
+  if(!active().length){ pill.textContent='لا توجد التزامات'; pill.className='pill'; }
+  else if(ct){ pill.textContent='جاهز لراتب '+arD(isoD(stepPayday(periodStart(),1))); pill.className='pill ok'; }
+  else { pill.textContent='راتب '+arD(isoD(periodStart())); pill.className='pill'; }
+
+  const n=active().length;
+  let sub = n? `${n} التزام نشط · النمط ${S.settings.mode==='level'?'الثابت':'المتناقص'} · أول دفعة مع راتب ${arD(isoD(periodStart()))}`
+              : 'أضف أول التزام لتبدأ الخطة';
+  if(ct) sub = `${n} التزام نشط · حُوّل لهذا الراتب · الدفعة القادمة ${arD(isoD(stepPayday(periodStart(),1)))}`;
+  if(S.carry>0) sub += ` · يشمل عجزًا مؤجلًا ${fmt(S.carry)}`;
+  if(loanDue()>0) sub += ` · يشمل سداد استلاف ${fmt(loanDue())}`;
+  document.getElementById('heroSub').textContent = sub;
+}
+
+/* ---------- البانرات ---------- */
+function renderBanners(){
+  const out=[]; const req=requiredNow(); const cap=S.settings.capacity;
+  const miss=missedTotal(); const bh=totalBehind();
+
+  if(miss>0){
+    const n=S.missed.length;
+    out.push(`<div class="banner late"><div><b>عجز متراكم ${money(miss)}</b>
+      مرّ ${n} ${n===1?'راتب':'رواتب'} دون تسجيل تحويل (${S.missed.map(m=>arD(m.period)).join('، ')}).
+      <a href="#" onclick="missedSheet();return false" style="color:inherit;font-weight:700">عالجه الآن</a></div></div>`);
+  }
+  if(!miss && bh>0)
+    out.push(`<div class="banner soon"><div><b>متأخر عن الجدول بـ ${money(bh)}</b>
+      هذا مجموع ما كان يفترض أن يتجمّع حتى اليوم ولم يتجمّع. التفصيل على كل بطاقة.</div></div>`);
+  if(S.carry>0)
+    out.push(`<div class="banner soon"><div><b>عجز مؤجل ${money(S.carry)}</b>
+      مضاف إلى مطلوب هذا الراتب — أنت اخترت تغطيته لاحقًا.</div></div>`);
+  if(cap>0 && req>cap)
+    out.push(`<div class="banner over"><div><b>الخطة تتجاوز قدرتك الشهرية</b>
+      المطلوب ${money(req)} وقدرتك ${money(cap)}. أجّل موعد التزام أو اخفض قيمته.</div></div>`);
+  active().filter(g=>daysLeft(g.due)<=7).forEach(g=>{
+    const d=daysLeft(g.due);
+    out.push(`<div class="banner soon"><div><b>${E(g.name)} — ${d<0?'تجاوز موعده':(d===0?'موعده اليوم':'بعد '+d+' يوم')}</b>
+      متجمّع ${money(g.saved)} من ${money(g.target)}. <a href="#" onclick="openGoal('${g.id}');return false" style="color:inherit;font-weight:700">افتح الالتزام</a></div></div>`);
+  });
+  S.goals.filter(g=>g.status==='active' && remain(g)===0 && daysLeft(g.due)>7).forEach(g=>{
+    out.push(`<div class="banner good"><div><b>${E(g.name)} اكتمل مبكرًا</b>
+      جاهز للصرف عند الحاجة.</div></div>`);
+  });
+  if(S.free>0)
+    out.push(`<div class="banner soon"><div><b>لديك رصيد حر ${money(S.free)}</b>
+      <a href="#" onclick="freeSheet();return false" style="color:inherit;font-weight:700">قرّر مصيره</a></div></div>`);
+
+  const hasData = S.goals.length || S.transfers.length;
+  if(hasData){
+    const age = S.lastExport ? Math.floor((today()-parseD(S.lastExport))/86400000) : null;
+    if(age===null)
+      out.push(`<div class="banner over"><div><b>لم تحفظ نسخة احتياطية بعد</b>
+        بياناتك محفوظة في هذا المتصفح فقط. مسح بيانات التصفح يمحوها.
+        <a href="#" onclick="exportData();return false" style="color:inherit;font-weight:700">صدّر نسخة الآن</a></div></div>`);
+    else if(age>=30)
+      out.push(`<div class="banner over"><div><b>مضى ${age} يومًا على آخر نسخة احتياطية</b>
+        <a href="#" onclick="exportData();return false" style="color:inherit;font-weight:700">صدّر نسخة محدّثة</a></div></div>`);
+  }
+  document.getElementById('banners').innerHTML = out.join('');
+}
+
+/* ---------- معالجة العجز المتراكم ---------- */
+function missedSheet(){
+  const miss=missedTotal();
+  openSheet(`<h2>عجز متراكم ${money(miss)}</h2>
+    <div class="lead">رواتب مرّت دون أن تسجّل فيها تحويلًا.</div>
+    <div class="alloc">
+      ${S.missed.map(m=>`<div class="ar"><span>راتب ${arD(m.period)}</span><b class="num">${fmt(m.amount)}</b></div>`).join('')}
+      <div class="ar tot"><span>الإجمالي</span><b class="num">${money(miss)}</b></div>
+    </div>
+    <h3 style="font-size:13.5px;margin:14px 0 8px">كيف تعالجه؟</h3>
+    <div class="btnrow" style="flex-direction:column">
+      <button class="btn" onclick="missedCover()">أضفه لمطلوب هذا الراتب</button>
+      <button class="btn ghost" onclick="missedDrop()">أسقطه — أعد الجدولة</button>
+      <button class="btn ghost" onclick="closeSheet()">لاحقًا</button>
+    </div>
+    <div class="muted" style="margin-top:12px">الإسقاط لا يضيّع شيئًا: المبلغ الشهري ارتفع أصلًا لأن عدد الأشهر المتبقية قلّ، فالخطة وزّعت العجز على ما تبقى من أشهر.</div>`);
+}
+function missedCover(){ S.carry=R(S.carry+missedTotal()); S.missed=[]; save(); closeSheet(); renderAll(); toast('أُضيف للمطلوب'); }
+function missedDrop(){ S.missed=[]; save(); closeSheet(); renderAll(); toast('أُسقط العجز وأُعيدت الجدولة'); }
+
+/* ---------- بطاقة الالتزام ---------- */
+function vesselHTML(g){
+  const pct = g.target>0 ? Math.min(100, Math.round(g.saved/g.target*100)) : 0;
+  const d = daysLeft(g.due);
+  const debt = S.loans.some(l=>l.goalId===g.id && l.repaid<l.amount);
+  let tag='', cls='tag';
+  if(remain(g)===0){ tag='جاهز للصرف'; cls='tag ready'; }
+  else if(d<0){ tag='تجاوز الموعد'; cls='tag due'; }
+  else if(debt){ tag='عليه دَين'; cls='tag debt'; }
+  else tag = g.category;
+  const ml = monthsLeft(g.due);
+  return `<div class="vessel" onclick="openGoal('${g.id}')">
+    <div class="tank">
+      <div class="fill" style="height:${pct}%"></div>
+      <span class="${cls}">${tag}</span>
+      <div class="tank-txt"><div class="pct num">${pct}%</div>
+        <div class="of num">${fmt(g.saved)} / ${fmt(g.target)}</div></div>
+    </div>
+    <div class="body">
+      <div class="nm">${E(g.name)}</div>
+      <div class="meta"><span>${arD(g.due)}</span><span class="num">${ml} ${ml===1?'شهر':'شهر'}</span></div>
+      <div class="share num">نصيبه الشهري ${fmt(pace(g))}</div>
+      ${behind(g)>0?`<div class="lag num">متأخر بـ ${fmt(behind(g))}</div>`:''}
+    </div></div>`;
+}
+
+/* ---------- لوحة الحالة ---------- */
+function renderHome(){
+  const saved=R(active().reduce((s,g)=>s+g.saved,0));
+  const tgt=R(active().reduce((s,g)=>s+g.target,0));
+  document.getElementById('kSaved').textContent=fmt(saved);
+  document.getElementById('kTarget').textContent=fmt(tgt);
+  document.getElementById('kFree').textContent=fmt(S.free);
+  const lag=R(totalBehind()+missedTotal());
+  const lagEl=document.getElementById('kLag');
+  lagEl.textContent=fmt(lag);
+  lagEl.style.color = lag>0 ? 'var(--alert)' : '';
+  const list=ordered('nearest');
+  document.getElementById('homeVessels').innerHTML = list.length
+    ? list.map(vesselHTML).join('')
+    : `<div class="empty" style="grid-column:1/-1"><div class="big">لا توجد التزامات بعد</div>
+       ابدأ من تبويب الالتزامات بإضافة أول مصروف تعرف موعده.</div>`;
+}
+
+/* ---------- الالتزامات ---------- */
+function renderGoals(){
+  const sel=document.getElementById('gCat');
+  sel.innerHTML=S.settings.categories.map(c=>`<option>${E(c)}</option>`).join('');
+  const list=ordered('nearest');
+  document.getElementById('allVessels').innerHTML = list.length? list.map(vesselHTML).join('')
+    : `<div class="empty" style="grid-column:1/-1">لا توجد التزامات نشطة.</div>`;
+  const arch=S.goals.filter(g=>g.status==='archived');
+  document.getElementById('archivedCard').style.display = arch.length?'':'none';
+  document.getElementById('archivedList').innerHTML = arch.map(g=>{
+    const sp=S.spends.find(s=>s.goalId===g.id);
+    return `<div class="lrow"><div><div class="t">${E(g.name)}</div>
+      <div class="s">${E(g.category)} · صُرف ${sp?arD(sp.date):'—'}</div></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="a num">${sp?fmt(sp.actual):fmt(g.target)}</div>
+        <button class="btn sm ghost" onclick="reviveSheet('${g.id}')">أعِده</button>
+      </div></div>`;
+  }).join('');
+}
+
+function reviveSheet(id){
+  const g=S.goals.find(x=>x.id===id);
+  const nd=new Date(today()); nd.setMonth(nd.getMonth()+ (g.cycle||12));
+  openSheet(`<h2>إعادة ${E(g.name)}</h2>
+    <div class="lead">يعود التزامًا نشطًا برصيد صفر. حدد القيمة والموعد الجديدين.</div>
+    <div class="grid2">
+      <div class="field"><label>القيمة</label><input id="rvT" type="number" value="${g.target}"></div>
+      <div class="field"><label>الموعد</label><input id="rvD" type="date" value="${isoD(nd)}"></div>
+    </div>
+    <button class="btn" onclick="doRevive('${id}')">أعِده للقائمة</button>`);
+}
+function doRevive(id){
+  const g=S.goals.find(x=>x.id===id);
+  const t=Number(document.getElementById('rvT').value), d=document.getElementById('rvD').value;
+  if(!t||t<=0) return toast('أدخل القيمة');
+  if(!d||parseD(d)<=today()) return toast('حدد موعدًا مستقبليًا');
+  S.goals.push({id:nid(),name:g.name,category:g.category,target:R(t),due:d,saved:0,
+    pri:active().length+1,status:'active',created:isoD(today()),start:isoD(periodStart()),
+    recurring:g.recurring,cycle:g.cycle,parent:id});
+  save(); closeSheet(); renderAll(); go('home'); toast('عاد الالتزام');
+}
+
+function previewAddGoal(){
+  const name=document.getElementById('gName').value.trim();
+  const target=Number(document.getElementById('gTarget').value);
+  const due=document.getElementById('gDue').value;
+  const cat=document.getElementById('gCat').value;
+  const sv=Number(document.getElementById('gSaved').value)||0;
+  if(!name)   return toast('اكتب اسم الالتزام');
+  if(!target||target<=0) return toast('أدخل قيمة تقديرية');
+  if(!due)    return toast('حدد تاريخ الاستحقاق — الالتزام بلا تاريخ يذهب للأمنيات');
+  if(parseD(due)<=today()) return toast('تاريخ الاستحقاق لا بد أن يكون في المستقبل');
+  if(sv>target) return toast('الرصيد الابتدائي أكبر من القيمة');
+
+  const before=requiredNow();
+  const g={id:nid(),name,category:cat,target:R(target),due,saved:R(sv),
+           pri:active().length+1,status:'active',created:isoD(today()),start:isoD(periodStart())};
+  S.goals.push(g);
+  const after=requiredNow();
+  S.goals.pop();
+  window._newGoal=g;
+
+  const cap=S.settings.capacity;
+  const over = cap>0 && after>cap;
+  let sug='';
+  if(over){
+    const need=R(after-cap);
+    sug=`<div class="banner over" style="margin-top:10px"><div>
+      <b>يتجاوز قدرتك بـ ${money(need)}</b>
+      جرّب أحد هذه: تأجيل موعد «${name}» بضعة أشهر، أو خفض قيمته،
+      أو تأجيل موعد التزام آخر أقل أولوية.</div></div>`;
+  }
+  openSheet(`<h2>تأكيد إضافة الالتزام</h2>
+    <div class="lead">${name} · ${money(target)} · ${arD(due)}</div>
+    <div class="alloc">
+      <div class="ar"><span>المبلغ الشهري قبل</span><b class="num">${money(before)}</b></div>
+      <div class="ar"><span>المبلغ الشهري بعد</span><b class="num">${money(after)}</b></div>
+      <div class="ar tot"><span>الفرق</span><b class="num ${after>before?'neg':'pos'}">${after>=before?'+':''}${money(after-before)}</b></div>
+    </div>${sug}
+    <div class="btnrow" style="margin-top:14px">
+      <button class="btn" onclick="confirmAddGoal()">أضف الالتزام</button>
+      <button class="btn ghost" onclick="closeSheet()">تراجع</button>
+    </div>`);
+}
+function confirmAddGoal(){
+  const g=window._newGoal; if(!g) return;
+  S.goals.push(g); save(); closeSheet(); renderAll();
+  ['gName','gTarget','gDue','gSaved'].forEach(i=>document.getElementById(i).value='');
+  toast('أُضيف الالتزام');
+}
+
+/* ---------- تفاصيل الالتزام ---------- */
+function openGoal(id){
+  const g=S.goals.find(x=>x.id===id); if(!g) return;
+  const pct=g.target>0?Math.min(100,Math.round(g.saved/g.target*100)):0;
+  const feed=[];
+  S.transfers.forEach(t=>{ const it=(t.items||[]).find(i=>i.goalId===id);
+    if(it) feed.push({d:t.date, t:'تحويل', a:it.amount}); });
+  S.loans.filter(l=>l.goalId===id).forEach(l=>feed.push({d:l.date,t:'استلاف — '+(l.reason||'بدون سبب'),a:-l.amount}));
+  feed.sort((a,b)=>parseD(b.d)-parseD(a.d));
+  const debts=S.loans.filter(l=>l.goalId===id && l.repaid<l.amount);
+
+  openSheet(`<h2>${E(g.name)}</h2>
+    <div class="lead">${E(g.category)} · موعده ${arD(g.due)} · ${monthsLeft(g.due)} شهرًا متبقية</div>
+    <div class="alloc">
+      <div class="ar"><span>المتجمّع</span><b class="num">${money(g.saved)}</b></div>
+      <div class="ar"><span>القيمة التقديرية</span><b class="num">${money(g.target)}</b></div>
+      <div class="ar"><span>المتبقي</span><b class="num">${money(remain(g))}</b></div>
+      <div class="ar tot"><span>نصيبه الشهري</span><b class="num">${money(pace(g))}</b></div>
+      <div class="bar"><i style="width:${pct}%"></i></div>
+    </div>
+    ${debts.length?`<div class="banner soon" style="margin-top:10px"><div><b>عليه دَين</b>
+      ${debts.map(l=>`${money(l.amount-l.repaid)} متبقية من استلاف ${l.mode==='direct'?'يُسدَّد دفعة واحدة':'مقسّط على '+l.installments+' أشهر'}`).join('<br>')}</div></div>`:''}
+    <div class="btnrow" style="margin-top:14px">
+      <button class="btn gold" onclick="spendSheet('${id}')">سجّل الصرف</button>
+      <button class="btn ghost" onclick="loanSheet('${id}')">استلف منه</button>
+    </div>
+    <div class="btnrow" style="margin-top:8px">
+      <button class="btn ghost" onclick="editSheet('${id}')">تعديل</button>
+      <button class="btn danger" onclick="delGoal('${id}')">حذف</button>
+    </div>
+    <div class="sep"></div>
+    <h3 style="font-size:13px;margin-bottom:8px">حركة الالتزام</h3>
+    ${feed.length? feed.map(f=>`<div class="lrow"><div><div class="t">${E(f.t)}</div>
+      <div class="s">${arD(f.d)}</div></div>
+      <div class="a num ${f.a<0?'neg':'pos'}">${f.a<0?'−':'+'}${fmt(Math.abs(f.a))}</div></div>`).join('')
+      : '<div class="muted">لا توجد حركة بعد.</div>'}`);
+}
+
+function editSheet(id){
+  const g=S.goals.find(x=>x.id===id);
+  openSheet(`<h2>تعديل الالتزام</h2><div class="lead">أي تعديل يعيد حساب المبلغ الشهري.</div>
+    <div class="field"><label>الاسم</label><input id="eName" value="${E(g.name)}"></div>
+    <div class="grid2">
+      <div class="field"><label>القيمة</label><input id="eTarget" type="number" value="${g.target}"></div>
+      <div class="field"><label>الموعد</label><input id="eDue" type="date" value="${g.due}"></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>التصنيف</label><select id="eCat">${S.settings.categories.map(c=>`<option ${c===g.category?'selected':''}>${E(c)}</option>`).join('')}</select></div>
+      <div class="field"><label>المتجمّع</label><input id="eSaved" type="number" value="${g.saved}"></div>
+    </div>
+    <button class="btn" onclick="saveEdit('${id}')">احفظ التعديل</button>`);
+}
+function saveEdit(id){
+  const g=S.goals.find(x=>x.id===id);
+  const t=Number(document.getElementById('eTarget').value);
+  const d=document.getElementById('eDue').value;
+  if(!t||t<=0) return toast('القيمة غير صحيحة');
+  if(!d) return toast('حدد الموعد');
+  g.name=document.getElementById('eName').value.trim()||g.name;
+  g.target=R(t); g.due=d; g.category=document.getElementById('eCat').value;
+  g.saved=R(Number(document.getElementById('eSaved').value)||0);
+  if(g.saved>g.target){                       /* الفائض عن القيمة الجديدة لا يُحبس */
+    S.free=R(S.free+(g.saved-g.target)); g.saved=g.target;
+  }
+  save(); closeSheet(); renderAll(); toast('حُفظ التعديل');
+}
+function delGoal(id){
+  const g=S.goals.find(x=>x.id===id);
+  const open=S.loans.filter(l=>l.goalId===id && l.repaid<l.amount);
+  const owed=R(open.reduce((s,l)=>s+(l.amount-l.repaid),0));
+  openSheet(`<h2>حذف ${E(g.name)}؟</h2>
+    <div class="lead">المتجمّع فيه ${money(g.saved)} سينتقل إلى الرصيد الحر لتقرر مصيره.</div>
+    ${owed>0?`<div class="banner late"><div><b>عليه دَين قائم ${money(owed)}</b>
+      سيُلغى مع الالتزام ويسقط من مطلوبك الشهري، ولن يُسدَّد.</div></div>`:''}
+    <div class="btnrow">
+      <button class="btn danger" onclick="doDelGoal('${id}')">احذف</button>
+      <button class="btn ghost" onclick="openGoal('${id}')">تراجع</button>
+    </div>`);
+}
+function doDelGoal(id){
+  const g=S.goals.find(x=>x.id===id);
+  S.free=R(S.free+g.saved);
+  /* الديون المرتبطة تُلغى، وإلا بقيت تُطالبك شهريًا بلا التزام تعود إليه */
+  S.loans=S.loans.filter(l=>l.goalId!==id || l.repaid>=l.amount);
+  S.goals=S.goals.filter(x=>x.id!==id);
+  save(); closeSheet(); renderAll(); toast('حُذف الالتزام');
+}
+
+/* ---------- الصرف ---------- */
+function spendSheet(id){
+  const g=S.goals.find(x=>x.id===id);
+  openSheet(`<h2>صرف ${E(g.name)}</h2>
+    <div class="lead">المتجمّع ${money(g.saved)}. أدخل ما دفعته فعليًا.</div>
+    <div class="field"><label>القيمة الفعلية</label>
+      <input id="spAmt" type="number" inputmode="decimal" value="${g.target}" oninput="spDiff('${id}')"></div>
+    <div class="field"><label>ملاحظة (اختياري)</label><input id="spNote"></div>
+    <div id="spInfo"></div>
+    <button class="btn gold" style="margin-top:12px" onclick="spendStep2('${id}')">التالي</button>`);
+  spDiff(id);
+}
+function spDiff(id){
+  const g=S.goals.find(x=>x.id===id);
+  const a=Number(document.getElementById('spAmt').value)||0;
+  const d=R(g.saved-a);
+  const el=document.getElementById('spInfo');
+  if(d>0) el.innerHTML=`<div class="banner good"><div><b>يتبقى ${money(d)}</b>
+    ستختار في الخطوة التالية: توزيعه على بقية الالتزامات أو إبقاؤه رصيدًا حرًا.</div></div>`;
+  else if(d<0) el.innerHTML=`<div class="banner late"><div><b>ينقصك ${money(-d)}</b>
+    ${S.free>=(-d)?'سيُغطى من رصيدك الحر.':'سيُغطى '+fmt(S.free)+' من رصيدك الحر والباقي يُسجَّل كدفع من خارج الخطة.'}</div></div>`;
+  else el.innerHTML=`<div class="banner good"><div><b>مطابق تمامًا</b></div></div>`;
+}
+function spendStep2(id){
+  const g=S.goals.find(x=>x.id===id);
+  const a=Number(document.getElementById('spAmt').value)||0;
+  if(a<=0) return toast('أدخل قيمة الصرف');
+  const note=document.getElementById('spNote').value.trim();
+  const d=R(g.saved-a);
+  let block='';
+  if(d>0) block=`<h3 style="font-size:13.5px;margin:14px 0 8px">الفارق ${money(d)} — أين يذهب؟</h3>
+    <div class="choice sel" id="c-dist" onclick="pick('sp','dist')"><b>وزّعه على بقية الالتزامات</b>
+      <span>حسب سياسة التوزيع الحالية، يقرّب المواعيد.</span></div>
+    <div class="choice" id="c-free" onclick="pick('sp','free')"><b>أبقه رصيدًا حرًا</b>
+      <span>تقرر مصيره لاحقًا: سحبه أو توزيعه.</span></div>`;
+  openSheet(`<h2>تأكيد الصرف</h2>
+    <div class="lead">${E(g.name)} · ${money(a)}${note?' · '+note:''}</div>
+    ${block}
+    <h3 style="font-size:13.5px;margin:14px 0 8px">هل هذا المصروف متكرر؟</h3>
+    <div class="choice" id="c-no" onclick="pick('rc','no')"><b>لا — مرة واحدة</b>
+      <span>يُؤرشف الالتزام بعد الصرف.</span></div>
+    <div class="choice sel" id="c-yes" onclick="pick('rc','yes')"><b>نعم — يتكرر</b>
+      <span>يُنشأ التزام جديد بنفس القيمة لدورة قادمة.</span></div>
+    <div class="field" id="cycWrap" style="margin-top:10px"><label>كل كم شهرًا؟</label>
+      <input id="spCycle" type="number" value="12" min="1"></div>
+    <button class="btn gold" style="margin-top:6px"
+      onclick="doSpend('${id}',${a})">أكّد الصرف</button>`);
+  window._pick={sp:'dist', rc:'yes'}; window._spNote=note;
+}
+function pick(grp,val){
+  window._pick=window._pick||{}; window._pick[grp]=val;
+  const map={sp:['dist','free'],rc:['no','yes']};
+  map[grp].forEach(v=>{ const el=document.getElementById('c-'+v); if(el) el.classList.toggle('sel', v===val); });
+  if(grp==='rc'){ const w=document.getElementById('cycWrap'); if(w) w.style.display = val==='yes'?'':'none'; }
+}
+function doSpend(id,amount){
+  const note=window._spNote||'';
+  const g=S.goals.find(x=>x.id===id);
+  const diff=R(g.saved-amount);
+  const p=window._pick||{sp:'dist',rc:'yes'};
+
+  let outside=0;
+  if(diff<0){
+    const need=-diff;
+    const fromFree=Math.min(S.free,need);
+    S.free=R(S.free-fromFree);
+    outside=R(need-fromFree);          /* الباقي دُفع من خارج الخطة ويُسجَّل صراحةً */
+  }
+  S.spends.push({id:nid(),goalId:id,name:g.name,category:g.category,
+    date:isoD(today()),actual:R(amount),saved:g.saved,diff,note,outside:R(outside)});
+
+  g.saved=0; g.status='archived';
+  S.loans.forEach(l=>{ if(l.goalId===id && l.repaid<l.amount) l.repaid=l.amount; }); /* الدَين انتهى بانتهاء الالتزام */
+
+  if(diff>0){
+    if(p.sp==='free') S.free=R(S.free+diff);
+    else { const res=allocate(diff,{skipLoans:true}); applyAllocation(res); S.free=R(S.free+res.leftover); }
+  }
+  if(p.rc==='yes'){
+    const cyc=Math.max(1,Number(document.getElementById('spCycle')?.value)||12);
+    const nd=new Date(today()); nd.setMonth(nd.getMonth()+cyc);
+    S.goals.push({id:nid(),name:g.name,category:g.category,target:R(amount),
+      due:isoD(nd),saved:0,pri:active().length+1,status:'active',
+      created:isoD(today()),start:isoD(periodStart()),recurring:true,cycle:cyc,parent:id});
+  }
+  save(); closeSheet(); renderAll();
+  toast(outside>0? 'سُجّل الصرف — '+fmt(outside)+' دُفعت من خارج الخطة' : 'سُجّل الصرف');
+}
+
+/* ---------- الاستلاف ---------- */
+function loanSheet(id){
+  const g=S.goals.find(x=>x.id===id);
+  openSheet(`<h2>استلاف من ${E(g.name)}</h2>
+    <div class="lead">المتاح ${money(g.saved)}. يُسجَّل كدَين على الالتزام حتى السداد.</div>
+    <div class="field"><label>المبلغ</label><input id="lnAmt" type="number" inputmode="decimal"></div>
+    <div class="field"><label>السبب</label><input id="lnWhy" placeholder="طارئ"></div>
+    <h3 style="font-size:13.5px;margin:12px 0 8px">طريقة السداد</h3>
+    <div class="choice sel" id="c-direct" onclick="pickLoan('direct')"><b>تسديد مباشر</b>
+      <span>يُضاف كاملًا إلى مطلوب الشهر القادم.</span></div>
+    <div class="choice" id="c-inst" onclick="pickLoan('inst')"><b>تقسيط</b>
+      <span>يُوزَّع على عدة أشهر ويُضاف للمبلغ الشهري.</span></div>
+    <div class="field" id="instWrap" style="display:none"><label>عدد الأشهر</label>
+      <input id="lnN" type="number" value="6" min="2"></div>
+    <button class="btn" onclick="doLoan('${id}')">سجّل الاستلاف</button>`);
+  window._loanMode='direct';
+}
+function pickLoan(m){
+  window._loanMode=m;
+  document.getElementById('c-direct').classList.toggle('sel',m==='direct');
+  document.getElementById('c-inst').classList.toggle('sel',m==='inst');
+  document.getElementById('instWrap').style.display = m==='inst'?'':'none';
+}
+function doLoan(id){
+  const g=S.goals.find(x=>x.id===id);
+  const a=Number(document.getElementById('lnAmt').value)||0;
+  if(a<=0) return toast('أدخل المبلغ');
+  if(a>g.saved) return toast('المبلغ أكبر من المتجمّع في الالتزام');
+  const mode=window._loanMode==='inst'?'inst':'direct';
+  const n=Math.max(2,Number(document.getElementById('lnN')?.value)||6);
+  g.saved=R(g.saved-a);
+  S.loans.push({id:nid(),goalId:id,goalName:g.name,amount:R(a),
+    reason:document.getElementById('lnWhy').value.trim(),date:isoD(today()),
+    mode,installments:mode==='inst'?n:1,repaid:0});
+  save(); closeSheet(); renderAll(); toast('سُجّل الاستلاف');
+}
+
+/* ---------- التحويل ---------- */
+function renderTransfer(){
+  const el=document.getElementById('transferState');
+  if(!active().length){ el.innerHTML='<div class="empty">أضف التزامًا واحدًا على الأقل قبل التحويل.</div>'; return; }
+  const ct=currentTransfer();
+  if(ct){
+    el.innerHTML=`<div class="banner good"><div><b>سُجّل تحويل هذه الفترة</b>
+      ${money(ct.actual)} بتاريخ ${arD(ct.date)}</div></div>
+      <div class="alloc">${ct.items.map(i=>`<div class="ar"><span>${E(i.name)}</span><b class="num">${fmt(i.amount)}</b></div>`).join('')}
+      ${ct.leftover>0?`<div class="ar"><span>رصيد حر</span><b class="num">${fmt(ct.leftover)}</b></div>`:''}
+      <div class="ar tot"><span>الإجمالي</span><b class="num">${money(ct.actual)}</b></div></div>
+      <button class="btn ghost" style="margin-top:12px" onclick="undoTransfer('${ct.id}')">تراجع عن هذا التحويل</button>`;
+    return;
+  }
+  const req=requiredNow();
+  const prev=allocate(req);
+  el.innerHTML=`<div class="row" style="margin-bottom:10px">
+      <div><div class="muted">فترة ${arD(isoD(periodStart()))}</div>
+      <div style="font-size:24px;font-weight:700" class="num">${money(req)}</div></div></div>
+    <div class="alloc">
+      ${prev.items.map(i=>`<div class="ar"><span>${E(i.name)}</span><b class="num">${fmt(i.amount)}</b></div>`).join('')}
+      ${S.carry>0?`<div class="ar"><span>عجز مؤجل من الشهر الماضي</span><b class="num">${fmt(S.carry)}</b></div>`:''}
+      <div class="ar tot"><span>التوزيع المقترح</span><b class="num">${money(req)}</b></div>
+    </div>
+    <div class="field" style="margin-top:14px"><label>المبلغ الذي حوّلته فعليًا</label>
+      <input id="trAmt" type="number" inputmode="decimal" value="${R(req)}"></div>
+    <button class="btn" onclick="transferStep2()">تابع</button>`;
+}
+
+function transferStep2(){
+  const req=requiredNow();
+  window._req=req;
+  const a=Number(document.getElementById('trAmt').value);
+  if(isNaN(a)||a<0) return toast('أدخل مبلغًا صحيحًا');
+  const diff=R(a-req);
+
+  if(Math.abs(diff)<0.01){ const res=allocate(a); return confirmTransfer(a,res,'exact',req,0); }
+
+  if(diff<0){
+    const short=-diff;
+    openSheet(`<h2>حوّلت أقل بـ ${money(short)}</h2>
+      <div class="lead">اختر كيف يتعامل النظام مع النقص.</div>
+      <h3 style="font-size:13.5px;margin:12px 0 8px">ترتيب توزيع المبلغ الموجود</h3>
+      <div class="choice ${S.settings.policy==='nearest'?'sel':''}" id="c-nearest" onclick="pickPol('nearest')">
+        <b>الأقرب موعدًا أولًا</b><span>الالتزامات القريبة تُملأ أولًا.</span></div>
+      <div class="choice ${S.settings.policy==='priority'?'sel':''}" id="c-priority" onclick="pickPol('priority')">
+        <b>حسب الأولوية التي حددتها</b><span>يتبع الترتيب في الإعدادات.</span></div>
+      <h3 style="font-size:13.5px;margin:14px 0 8px">ماذا عن النقص نفسه؟</h3>
+      <div class="choice sel" id="c-resch" onclick="pickShort('resch')"><b>أعد الجدولة</b>
+        <span>يرتفع المبلغ الشهري لبقية الأشهر وتبقى المواعيد كما هي.</span></div>
+      <div class="choice" id="c-cover" onclick="pickShort('cover')"><b>أغطّيه الشهر القادم</b>
+        <span>يبقى المبلغ الشهري كما هو ويُضاف ${money(short)} لمطلوب الشهر القادم.</span></div>
+      <div id="shortPrev"></div>
+      <button class="btn" style="margin-top:12px" onclick="doShort(${a})">أكّد التحويل</button>`);
+    window._pol=S.settings.policy; window._short='resch'; shortPrev(a);
+    return;
+  }
+
+  const extra=diff;
+  openSheet(`<h2>حوّلت أكثر بـ ${money(extra)}</h2>
+    <div class="lead">اختر مصير الزيادة.</div>
+    <div class="choice sel" id="c-sdist" onclick="pickSur('dist')"><b>وزّعها على الالتزامات</b>
+      <span>تُملأ الالتزامات بترتيب التوزيع، ويقترب اكتمالها.</span></div>
+    <div class="choice" id="c-sfree" onclick="pickSur('free')"><b>أبقها رصيدًا حرًا</b>
+      <span>تقرر مصيرها لاحقًا: سحبها أو توزيعها.</span></div>
+    <button class="btn" style="margin-top:12px" onclick="doSurplus(${a},${req})">أكّد التحويل</button>`);
+  window._sur='dist';
+}
+function pickPol(p){ window._pol=p;
+  document.getElementById('c-nearest').classList.toggle('sel',p==='nearest');
+  document.getElementById('c-priority').classList.toggle('sel',p==='priority');
+  shortPrev(Number(document.getElementById('trAmt')?.value)||0); }
+function pickShort(v){ window._short=v;
+  document.getElementById('c-resch').classList.toggle('sel',v==='resch');
+  document.getElementById('c-cover').classList.toggle('sel',v==='cover'); }
+function pickSur(v){ window._sur=v;
+  document.getElementById('c-sdist').classList.toggle('sel',v==='dist');
+  document.getElementById('c-sfree').classList.toggle('sel',v==='free'); }
+
+function shortPrev(a){
+  const res=allocate(a,{policy:window._pol});
+  const el=document.getElementById('shortPrev'); if(!el) return;
+  el.innerHTML=`<div class="alloc" style="margin-top:12px">
+    ${res.items.map(i=>`<div class="ar"><span>${E(i.name)}</span><b class="num">${fmt(i.amount)}</b></div>`).join('')||'<div class="ar"><span>لا شيء يُوزَّع</span><b>0</b></div>'}
+    <div class="ar tot"><span>الموزَّع</span><b class="num">${money(a)}</b></div></div>`;
+}
+function doShort(a){
+  const req=window._req;
+  const res=allocate(a,{policy:window._pol});
+  /* المطلوب يتضمن العجز المؤجل القديم أصلًا، فالعجز الجديد = المطلوب − المدفوع، لا تراكمًا فوقه */
+  confirmTransfer(a,res,window._short==='cover'?'cover':'reschedule',req,
+                  window._short==='cover'?R(req-a):0);
+}
+function doSurplus(a,req){
+  let res;
+  if(window._sur==='free'){ res=allocate(req); res.leftover=R(res.leftover+(a-req)); }
+  else res=allocate(a);
+  confirmTransfer(a,res,'surplus',req,0);
+}
+function confirmTransfer(a,res,decision,req,newCarry){
+  const carryBefore=S.carry;
+  applyAllocation(res);
+  if(res.leftover>0) S.free=R(S.free+res.leftover);
+  S.carry=R(newCarry||0);              /* سداد كامل أو إعادة جدولة يصفّر العجز المؤجل */
+  S.transfers.push({id:nid(),period:isoD(periodStart()),date:isoD(today()),
+    required:R(req),actual:R(a),decision,carryBefore:R(carryBefore),
+    items:res.items.map(i=>({goalId:i.goalId,name:i.name,amount:i.amount})),
+    repay:res.repay, leftover:res.leftover});
+  save(); closeSheet(); renderAll(); go('home'); toast('سُجّل التحويل');
+}
+function undoTransfer(id){
+  const t=S.transfers.find(x=>x.id===id); if(!t) return;
+  t.items.forEach(i=>{ const g=S.goals.find(x=>x.id===i.goalId); if(g) g.saved=Math.max(0,R(g.saved-i.amount)); });
+  (t.repay||[]).forEach(r=>{ const l=S.loans.find(x=>x.id===r.loanId); if(l) l.repaid=Math.max(0,R(l.repaid-r.amount)); });
+  if(t.leftover>0) S.free=Math.max(0,R(S.free-t.leftover));
+  if(t.carryBefore!==undefined) S.carry=R(t.carryBefore);   /* يعيد العجز المؤجل كما كان */
+  S.transfers=S.transfers.filter(x=>x.id!==id);
+  save(); renderAll(); toast('أُلغي التحويل');
+}
+
+/* ---------- الرصيد الحر ---------- */
+function freeSheet(){
+  openSheet(`<h2>الرصيد الحر ${money(S.free)}</h2>
+    <div class="lead">اختر ما تريد فعله به.</div>
+    <div class="btnrow" style="flex-direction:column">
+      <button class="btn" onclick="freeDistribute()">وزّعه على الالتزامات</button>
+      <button class="btn ghost" onclick="freeWithdraw()">اسحبه من الخطة</button>
+      <button class="btn ghost" onclick="closeSheet()">لاحقًا</button>
+    </div>`);
+}
+function freeDistribute(){
+  const res=allocate(S.free,{skipLoans:true});
+  applyAllocation(res);
+  S.free=R(res.leftover);
+  save(); closeSheet(); renderAll(); toast('وُزّع الرصيد الحر');
+}
+function freeWithdraw(){
+  const amt=S.free;
+  S.recs.push({id:nid(),date:isoD(today()),type:'سحب رصيد حر',
+    amount:R(-amt), changes:{free:R(-amt)}});
+  S.free=0; save(); closeSheet(); renderAll(); toast('سُحب الرصيد الحر');
+}
+
+/* ---------- التوقعات ---------- */
+function renderForecast(){
+  const el=document.getElementById('forecast');
+  const list=active(); if(!list.length){ el.innerHTML='<div class="muted">لا توجد التزامات.</div>'; return; }
+  const sim=list.map(g=>({id:g.id,name:g.name,due:g.due,rem:remain(g),left:monthsLeft(g.due)}));
+  const monthly=baseMonthly();
+  if(monthly<=0){ el.innerHTML='<div class="muted">لا يوجد مبلغ شهري بعد.</div>'; return; }
+  const horizon=Math.max(...sim.map(s=>s.left));
+  let d=currentTransfer()?stepPayday(periodStart(),1):periodStart();
+  const rows=[];
+  for(let m=0;m<Math.min(horizon,36);m++){
+    let left=monthly;
+    const part={};                                   /* خريطة بالمعرّف بدل تحليل نص */
+    const ord=sim.filter(x=>x.rem>0.005).sort((a,b)=>parseD(a.due)-parseD(b.due));
+    for(const x of ord){
+      const ml=Math.max(1,x.left-m);
+      const take=Math.min(R(x.rem/ml), x.rem, left);
+      if(take>0.005){ x.rem=R(x.rem-take); left=R(left-take); part[x.id]=R((part[x.id]||0)+take); }
+    }
+    for(const x of ord){
+      if(left<=0.005) break;
+      const take=Math.min(x.rem,left);
+      if(take>0.005){ x.rem=R(x.rem-take); left=R(left-take); part[x.id]=R((part[x.id]||0)+take); }
+    }
+    const line=ord.filter(x=>part[x.id]>0).map(x=>E(x.name)+' '+fmt(part[x.id]));
+    rows.push(`<div class="lrow"><div><div class="t">${arD(isoD(d))}</div>
+      <div class="s">${line.join(' · ')||'لا شيء'}</div></div>
+      <div class="a num">${fmt(R(monthly-left))}</div></div>`);
+    d=stepPayday(d,1);
+    if(sim.every(x=>x.rem<=0.005)) break;
+  }
+  el.innerHTML=rows.join('');
+}
+
+/* ---------- الأمنيات ---------- */
+function addWish(){
+  const n=document.getElementById('wName').value.trim();
+  if(!n) return toast('اكتب الاسم');
+  S.wishes.push({id:nid(),name:n,est:R(Number(document.getElementById('wEst').value)||0)});
+  document.getElementById('wName').value=''; document.getElementById('wEst').value='';
+  save(); renderWishes(); toast('أُضيفت للأمنيات');
+}
+function renderWishes(){
+  document.getElementById('wishList').innerHTML = S.wishes.length? S.wishes.map(w=>
+    `<div class="lrow"><div><div class="t">${E(w.name)}</div>
+      <div class="s">${w.est?money(w.est):'بلا قيمة محددة'}</div></div>
+      <div style="display:flex;gap:6px">
+        <button class="btn sm" onclick="startWish('${w.id}')">ابدأ فيها</button>
+        <button class="btn sm ghost" onclick="delWish('${w.id}')">حذف</button>
+      </div></div>`).join('')
+    : '<div class="empty">القائمة فارغة.</div>';
+}
+function delWish(id){ S.wishes=S.wishes.filter(w=>w.id!==id); save(); renderWishes(); }
+function startWish(id){
+  const w=S.wishes.find(x=>x.id===id);
+  openSheet(`<h2>تحويل «${E(w.name)}» إلى التزام</h2>
+    <div class="lead">حدد القيمة والموعد لترى أثرها على مبلغك الشهري.</div>
+    <div class="grid2">
+      <div class="field"><label>القيمة</label><input id="wwT" type="number" value="${w.est||''}"></div>
+      <div class="field"><label>الموعد</label><input id="wwD" type="date"></div>
+    </div>
+    <div class="field"><label>التصنيف</label><select id="wwC">${S.settings.categories.map(c=>`<option>${E(c)}</option>`).join('')}</select></div>
+    <button class="btn" onclick="wishPreview('${id}')">اعرض الأثر</button>`);
+}
+function wishPreview(id){
+  const w=S.wishes.find(x=>x.id===id);
+  const t=Number(document.getElementById('wwT').value), d=document.getElementById('wwD').value;
+  const c=document.getElementById('wwC').value;
+  if(!t||t<=0) return toast('أدخل القيمة');
+  if(!d||parseD(d)<=today()) return toast('حدد موعدًا مستقبليًا');
+  const before=requiredNow();
+  const g={id:nid(),name:w.name,category:c,target:R(t),due:d,saved:0,
+           pri:active().length+1,status:'active',created:isoD(today()),start:isoD(periodStart())};
+  S.goals.push(g); const after=requiredNow(); S.goals.pop();
+  window._newGoal=g; window._wishId=id;
+  openSheet(`<h2>${E(w.name)}</h2><div class="lead">${money(t)} · ${arD(d)}</div>
+    <div class="alloc">
+      <div class="ar"><span>قبل</span><b class="num">${money(before)}</b></div>
+      <div class="ar"><span>بعد</span><b class="num">${money(after)}</b></div>
+      <div class="ar tot"><span>الزيادة الشهرية</span><b class="num neg">+${money(after-before)}</b></div>
+    </div>
+    <div class="btnrow" style="margin-top:14px">
+      <button class="btn" onclick="commitWish()">حوّلها لالتزام</button>
+      <button class="btn ghost" onclick="closeSheet()">تراجع</button>
+    </div>`);
+}
+function commitWish(){
+  const g=window._newGoal, id=window._wishId; if(!g) return;
+  S.goals.push(g); S.wishes=S.wishes.filter(w=>w.id!==id);
+  save(); closeSheet(); renderAll(); go('home'); toast('صارت التزامًا');
+}
+
+/* ---------- السجل ---------- */
+function renderLog(){
+  const ev=[];
+  S.transfers.forEach(t=>ev.push({d:t.date,t:'تحويل شهري',
+    s:t.items.map(i=>i.name+' '+fmt(i.amount)).join(' · ')+(t.leftover>0?' · حر '+fmt(t.leftover):''),
+    a:t.actual,k:'pos'}));
+  S.spends.forEach(s=>ev.push({d:s.date,t:'صرف — '+s.name,
+    s:`متجمّع ${fmt(s.saved)} · فارق ${fmt(s.diff)}${s.note?' · '+s.note:''}`,a:-s.actual,k:'neg'}));
+  S.loans.forEach(l=>ev.push({d:l.date,t:'استلاف من '+l.goalName,
+    s:(l.reason||'بدون سبب')+' · '+(l.mode==='direct'?'تسديد مباشر':'مقسّط '+l.installments+' أشهر')+
+      ' · سُدّد '+fmt(l.repaid)+' من '+fmt(l.amount),a:-l.amount,k:'neg'}));
+  ev.sort((a,b)=>parseD(b.d)-parseD(a.d));
+  document.getElementById('logList').innerHTML = ev.length? ev.map(e=>
+    `<div class="lrow"><div><div class="t">${E(e.t)}</div><div class="s">${E(e.s)}</div>
+      <div class="s">${arD(e.d)}</div></div>
+      <div class="a num ${e.k}">${e.a<0?'−':'+'}${fmt(Math.abs(e.a))}</div></div>`).join('')
+    : '<div class="empty">لا توجد حركات بعد.</div>';
+}
+
+/* ---------- التقارير ---------- */
+function renderReports(){
+  const m={};
+  S.settings.categories.forEach(c=>m[c]={spent:0,saving:0});
+  S.spends.forEach(s=>{ (m[s.category]=m[s.category]||{spent:0,saving:0}).spent+=s.actual; });
+  active().forEach(g=>{ (m[g.category]=m[g.category]||{spent:0,saving:0}).saving+=g.saved; });
+  const rows=Object.entries(m).filter(([,v])=>v.spent>0||v.saving>0)
+    .sort((a,b)=>(b[1].spent+b[1].saving)-(a[1].spent+a[1].saving));
+  const max=Math.max(1,...rows.map(([,v])=>v.spent+v.saving));
+  document.getElementById('catReport').innerHTML = rows.length? rows.map(([c,v])=>
+    `<div style="padding:9px 0;border-bottom:1px solid var(--line)">
+      <div class="row"><div class="t" style="font-size:13.5px;font-weight:600">${E(c)}</div>
+      <div class="num" style="font-size:13px">مصروف ${fmt(v.spent)} · مدخر ${fmt(v.saving)}</div></div>
+      <div class="bar"><i style="width:${(v.spent+v.saving)/max*100}%"></i></div></div>`).join('')
+    : '<div class="empty">لا توجد بيانات كافية بعد.</div>';
+
+  const bal=document.getElementById('recBal');
+  const st=document.getElementById('recStatus');
+  if(S.lastRec){
+    if(document.activeElement!==bal) bal.value=S.lastRec.balance;
+    st.innerHTML=`آخر مطابقة: <b class="num">${money(S.lastRec.balance)}</b> بتاريخ ${arD(S.lastRec.date)}.
+      الحقل معبّأ بها — عدّله بالرصيد الحالي وقارن.`;
+  } else {
+    st.textContent='لم تسجّل مطابقة بعد. أدخل رصيد حساب الادخار الفعلي لمقارنته بمجموع الالتزامات.';
+  }
+
+  document.getElementById('recLog').innerHTML = S.recs.length? S.recs.slice().reverse().map(r=>
+    `<div class="lrow"><div><div class="t">${E(r.type)}</div>
+      <div class="s">${arD(r.date)}${r.balance!==undefined?' · الرصيد وقتها '+fmt(r.balance):''}</div></div>
+     <div style="display:flex;align-items:center;gap:8px">
+       <div class="a num ${r.amount<0?'neg':(r.amount>0?'pos':'')}">${r.amount>0?'+':''}${fmt(r.amount)}</div>
+       <button class="btn sm ghost" onclick="undoRec('${r.id}')">تراجع</button>
+     </div></div>`).join('')
+    : '<div class="muted">لا توجد مطابقات مسجّلة.</div>';
+}
+function doReconcile(){
+  const bal=Number(document.getElementById('recBal').value);
+  if(isNaN(bal)) return toast('أدخل الرصيد الفعلي');
+  const book=R(active().reduce((s,g)=>s+g.saved,0)+S.free);
+  const diff=R(bal-book);
+  S._pendingBal=R(bal);
+  const el=document.getElementById('recResult');
+  if(Math.abs(diff)<0.01){
+    el.innerHTML=`<div class="banner good" style="margin-top:12px"><div><b>مطابق</b>
+      الدفتر ${money(book)} يساوي رصيدك.</div></div>`;
+    pushRec('مطابقة — لا فرق',0,{}); renderAll(); return;
+  }
+  const short=R(-diff);
+  const totalSaved=R(active().reduce((s,g)=>s+g.saved,0));
+  const opts = diff>0
+    ? `<button class="btn" onclick="fixRec(${diff},'free')">أضفه للرصيد الحر</button>
+       <button class="btn ghost" onclick="fixRec(${diff},'dist')">وزّعه على الالتزامات</button>
+       <button class="btn ghost" onclick="fixRec(${diff},'note')">سجّله كملاحظة فقط</button>`
+    : `${S.free>=short?`<button class="btn" onclick="fixRec(${diff},'cutFree')">اخصمه من الرصيد الحر</button>`:''}
+       ${totalSaved>0?`<button class="btn ghost" onclick="fixRec(${diff},'cutPro')">وزّع الخصم على الالتزامات بالتناسب</button>
+       <button class="btn ghost" onclick="cutGoalSheet(${short})">اخصمه من التزام أحدده</button>`:''}
+       <button class="btn ghost" onclick="fixRec(${diff},'note')">سجّله كملاحظة فقط</button>`;
+
+  el.innerHTML=`<div class="banner ${diff>0?'soon':'late'}" style="margin-top:12px"><div>
+    <b>${diff>0?'رصيدك أكبر من الدفتر بـ ':'رصيدك أقل من الدفتر بـ '}${money(Math.abs(diff))}</b>
+    الدفتر ${money(book)} والرصيد الفعلي ${money(bal)}.
+    ${diff>0?'مال موجود لم تسجّله في أي التزام.':'مال مصروف أو محوَّل دون تسجيله هنا.'}</div></div>
+    <div class="btnrow" style="margin-top:10px;flex-direction:column">${opts}</div>`;
+}
+
+/* خصم بالتناسب من الالتزامات حسب ما تجمّع في كل التزام */
+function deductPro(amount){
+  const gs=active().filter(g=>g.saved>0);
+  const tot=R(gs.reduce((s,g)=>s+g.saved,0));
+  if(tot<=0) return {total:0,cuts:[]};
+  let left=R(Math.min(amount,tot));
+  const cuts=[];
+  gs.forEach((g,i)=>{
+    if(left<=0) return;
+    let cut = (i===gs.length-1) ? left : R(amount*g.saved/tot);
+    cut=Math.min(cut,g.saved,left);
+    if(cut>0){ g.saved=R(g.saved-cut); left=R(left-cut); cuts.push({goalId:g.id,amount:R(cut)}); }
+  });
+  return {total:R(Math.min(amount,tot)),cuts};
+}
+
+function cutGoalSheet(short){
+  const gs=active().filter(g=>g.saved>0).sort((a,b)=>b.saved-a.saved);
+  openSheet(`<h2>من أي التزام نخصم ${money(short)}؟</h2>
+    <div class="lead">سيقل المتجمّع في الالتزام، ويرتفع نصيبه الشهري تلقائيًا ليعوّض الفرق قبل موعده.</div>
+    ${gs.map(g=>`<div class="choice" onclick="doCutGoal('${g.id}',${short})">
+      <b>${E(g.name)}</b><span>متجمّع ${money(g.saved)} · ${g.saved>=short?'يكفي':'لا يغطي كامل الفرق'}</span></div>`).join('')}
+    <button class="btn ghost" style="margin-top:8px" onclick="closeSheet()">تراجع</button>`);
+}
+function doCutGoal(id,short){
+  const g=S.goals.find(x=>x.id===id);
+  const cut=R(Math.min(g.saved,short));
+  g.saved=R(g.saved-cut);
+  const rest=R(short-cut);
+  pushRec('مطابقة — خُصم من '+g.name+(rest>0?' (تبقّى '+fmt(rest)+' غير مغطّى)':''),
+          R(-short), {goals:[{goalId:id,amount:R(-cut)}]});
+  closeSheet();
+  document.getElementById('recResult').innerHTML='';
+  renderAll(); toast(rest>0?'خُصم جزئيًا — أعد المطابقة':'سُجّلت المطابقة');
+}
+
+/* يسجّل مطابقة قابلة للتراجع ويحدّث الرصيد المرجعي */
+function pushRec(type,amount,changes){
+  S.recs.push({id:nid(),date:isoD(today()),type,amount:R(amount),
+    balance:S._pendingBal, changes:changes||{}});
+  S.lastRec={balance:S._pendingBal, date:isoD(today())};
+  save();
+}
+
+function fixRec(diff,how){
+  let label='مطابقة — فرق مسجَّل بلا معالجة';
+  const short=R(-diff);
+  let changes={};
+  if(how==='free'){ S.free=R(S.free+diff); changes={free:R(diff)}; label='مطابقة — أُضيف للرصيد الحر'; }
+  else if(how==='dist'){
+    const res=allocate(diff,{skipLoans:true}); applyAllocation(res);
+    S.free=R(S.free+res.leftover);
+    changes={goals:res.items.map(i=>({goalId:i.goalId,amount:i.amount})), free:R(res.leftover)};
+    label='مطابقة — وُزّع على الالتزامات'+(res.leftover>0?' (وبقي '+fmt(res.leftover)+' رصيدًا حرًا)':'');
+  }
+  else if(how==='cutFree'){ const c=Math.min(S.free,short); S.free=R(S.free-c); changes={free:R(-c)}; label='مطابقة — خُصم من الرصيد الحر'; }
+  else if(how==='cutPro'){
+    const r=deductPro(short); const rest=R(short-r.total);
+    changes={goals:r.cuts.map(c=>({goalId:c.goalId,amount:R(-c.amount)}))};
+    label='مطابقة — خُصم بالتناسب من الالتزامات'+(rest>0?' (تبقّى '+fmt(rest)+' غير مغطّى)':'');
+  }
+  pushRec(label,diff,changes);
+  document.getElementById('recResult').innerHTML='';
+  renderAll(); toast('سُجّلت المطابقة');
+}
+
+/* التراجع عن مطابقة: يعيد كل ما غيّرته */
+function undoRec(id){
+  const r=S.recs.find(x=>x.id===id); if(!r) return;
+  const c=r.changes||{};
+  if(c.free) S.free=R(S.free-c.free);
+  (c.goals||[]).forEach(x=>{ const g=S.goals.find(y=>y.id===x.goalId);
+    if(g) g.saved=Math.max(0,R(g.saved-x.amount)); });
+  S.recs=S.recs.filter(x=>x.id!==id);
+  const last=S.recs.slice().reverse().find(x=>x.balance!==undefined);
+  S.lastRec = last ? {balance:last.balance,date:last.date} : null;
+  save(); renderAll(); toast('تُرجع عن المطابقة');
+}
+
+/* ---------- الإعدادات ---------- */
+function renderSettings(){
+  document.getElementById('sPayday').value=S.settings.payday;
+  document.getElementById('sCapacity').value=S.settings.capacity||'';
+  document.getElementById('sMode').value=S.settings.mode;
+  document.getElementById('sPolicy').value=S.settings.policy;
+  const list=active().slice().sort((a,b)=>(a.pri??999)-(b.pri??999));
+  document.getElementById('priorityList').innerHTML = list.length? list.map((g,i)=>
+    `<div class="lrow"><div><div class="t">${i+1}. ${E(g.name)}</div>
+      <div class="s">${E(g.category)} · ${arD(g.due)}</div></div>
+      <div style="display:flex;gap:5px">
+        <button class="btn sm ghost" onclick="movePri('${g.id}',-1)" ${i===0?'disabled':''}>▲</button>
+        <button class="btn sm ghost" onclick="movePri('${g.id}',1)" ${i===list.length-1?'disabled':''}>▼</button>
+      </div></div>`).join('') : '<div class="muted">لا توجد التزامات.</div>';
+  renderAcct();
+  const bs=document.getElementById('backupStatus');
+  if(bs){
+    if(!S.lastExport) bs.innerHTML='<span style="color:var(--alert);font-weight:600">لم تحفظ نسخة بعد.</span> بياناتك في هذا المتصفح فقط.';
+    else{
+      const age=Math.floor((today()-parseD(S.lastExport))/86400000);
+      bs.innerHTML='آخر نسخة: '+arD(S.lastExport)+' — قبل '+age+' يومًا.'+
+        (age>=30?' <span style="color:var(--alert);font-weight:600">حان وقت نسخة جديدة.</span>':'');
+    }
+  }
+  document.getElementById('catList').innerHTML = S.settings.categories.map(c=>
+    `<span class="pill" style="background:#eef2f5;color:var(--ink);border-color:var(--line);margin:0 0 6px 6px;display:inline-flex">
+      ${E(c)} <a href="#" onclick="delCat('${E(c)}');return false" style="color:var(--alert);text-decoration:none;font-weight:700">×</a></span>`).join('');
+}
+function saveSettings(){
+  const p=Number(document.getElementById('sPayday').value);
+  S.settings.payday=Math.min(28,Math.max(1,p||27));
+  S.settings.capacity=R(Number(document.getElementById('sCapacity').value)||0);
+  S.settings.mode=document.getElementById('sMode').value;
+  S.settings.policy=document.getElementById('sPolicy').value;
+  save(); renderAll(); toast('حُفظت الإعدادات');
+}
+function movePri(id,dir){
+  const list=active().slice().sort((a,b)=>(a.pri??999)-(b.pri??999));
+  const i=list.findIndex(g=>g.id===id); const j=i+dir;
+  if(j<0||j>=list.length) return;
+  [list[i],list[j]]=[list[j],list[i]];
+  list.forEach((g,k)=>g.pri=k+1);
+  save(); renderSettings(); renderAll();
+}
+function addCat(){
+  const v=document.getElementById('newCat').value.trim();
+  if(!v) return; if(S.settings.categories.includes(v)) return toast('موجود مسبقًا');
+  S.settings.categories.push(v); document.getElementById('newCat').value='';
+  save(); renderSettings(); renderGoals();
+}
+function delCat(c){
+  if(S.goals.some(g=>g.category===c)) return toast('التصنيف مستخدم في التزام');
+  S.settings.categories=S.settings.categories.filter(x=>x!==c);
+  save(); renderSettings(); renderGoals();
+}
+
+/* ---------- التقويم ---------- */
+function pad(n){return String(n).padStart(2,'0')}
+function icsDate(d){ return d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate()); }
+function exportICS(){
+  const now=new Date();
+  const stamp=now.getFullYear()+pad(now.getMonth()+1)+pad(now.getDate())+'T'+
+              pad(now.getHours())+pad(now.getMinutes())+'00';
+  let ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//awiya//AR','CALSCALE:GREGORIAN'];
+  const first=stepPayday(periodStart(),1);
+  ics.push('BEGIN:VEVENT','UID:transfer-'+stamp+'@awiya','DTSTAMP:'+stamp+'Z',
+    'DTSTART;VALUE=DATE:'+icsDate(first),
+    'RRULE:FREQ=MONTHLY;BYMONTHDAY='+S.settings.payday,
+    'SUMMARY:تحويل الالتزامات المالية',
+    'DESCRIPTION:المطلوب تحويله حسب الخطة. افتح التطبيق لتسجيله.',
+    'BEGIN:VALARM','TRIGGER:PT9H','ACTION:DISPLAY','DESCRIPTION:وقت التحويل','END:VALARM',
+    'END:VEVENT');
+  active().forEach(g=>{
+    const d=parseD(g.due); const w=new Date(d); w.setDate(w.getDate()-7);
+    ics.push('BEGIN:VEVENT','UID:g'+g.id+'@awiya','DTSTAMP:'+stamp+'Z',
+      'DTSTART;VALUE=DATE:'+icsDate(w),
+      'SUMMARY:اقترب موعد '+g.name,
+      'DESCRIPTION:القيمة التقديرية '+fmt(g.target)+' ريال. الموعد '+g.due,
+      'BEGIN:VALARM','TRIGGER:PT9H','ACTION:DISPLAY','DESCRIPTION:'+g.name,'END:VALARM',
+      'END:VEVENT');
+  });
+  ics.push('END:VCALENDAR');
+  dl(new Blob([ics.join('\r\n')],{type:'text/calendar;charset=utf-8'}),'الالتزامات-المالية.ics');
+  toast('حُمّل ملف التقويم');
+}
+
+/* ---------- نسخ احتياطي ---------- */
+function dl(blob,name){
+  const u=URL.createObjectURL(blob); const a=document.createElement('a');
+  a.href=u; a.download=name; document.body.appendChild(a); a.click();
+  document.body.removeChild(a); setTimeout(()=>URL.revokeObjectURL(u),1500);
+}
+function exportData(){
+  S.lastExport=isoD(today());
+  dl(new Blob([JSON.stringify(S,null,2)],{type:'application/json'}),
+     'نسخة-الالتزامات-'+isoD(today())+'.json');
+  save(); renderBanners(); renderSettings();
+  toast('صُدّرت البيانات');
+}
+function importData(e){
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{ try{
+      const d=JSON.parse(r.result);
+      if(!d.goals) throw 0;
+      S=Object.assign(JSON.parse(JSON.stringify(DEF)),d);
+      save(); renderAll(); go('home'); toast('اُستوردت البيانات');
+    }catch(err){ toast('الملف غير صالح'); } };
+  r.readAsText(f); e.target.value='';
+}
+function wipeAll(){
+  openSheet(`<h2>مسح كل البيانات؟</h2>
+    <div class="lead">تُحذف كل الالتزامات والتحويلات والسجل نهائيًا. صدّر نسخة أولًا إن أردت الاحتفاظ بها.</div>
+    <div class="btnrow">
+      <button class="btn danger" onclick="doWipe()">امسح كل شيء</button>
+      <button class="btn ghost" onclick="closeSheet()">تراجع</button>
+    </div>`);
+}
+function doWipe(){ S=JSON.parse(JSON.stringify(DEF)); save(); closeSheet(); renderAll(); go('home'); toast('مُسحت البيانات'); }
+
+
+/* ==================================================================
+   بوابة الدخول والحسابات
+================================================================== */
+const gate = ()=>document.getElementById('gate');
+const gbox = ()=>document.getElementById('gateBox');
+function gateShow(html){ gate().classList.remove('off'); gbox().innerHTML=html; }
+function gateErr(m){ const e=document.getElementById('gErr'); if(e){ e.style.display=''; e.textContent=m; } }
+
+const HEAD = '<h1><span class="mark"></span> الالتزامات المالية</h1>';
+
+function showSetup(){
+  gateShow(HEAD+`
+    <div class="lead">للاستخدام بحساب ومزامنة بين الأجهزة، الصق بيانات مشروع Supabase.
+      راجع دليل الإعداد إن لم تنشئه بعد.</div>
+    <div class="err" id="gErr" style="display:none"></div>
+    <div class="note">الرابط تجده في Settings ← API، أو كوّنه من معرّف مشروعك الظاهر في شريط العنوان:
+      <span dir="ltr">https://&lt;المعرّف&gt;.supabase.co</span></div>
+    <div class="field"><label>Project URL</label>
+      <input id="cfgUrl" placeholder="https://xxxx.supabase.co" dir="ltr"></div>
+    <div class="field"><label>المفتاح العلني (publishable أو anon)</label>
+      <input id="cfgKey" placeholder="sb_publishable_... أو eyJ..." dir="ltr"></div>
+    <button class="btn" onclick="saveCfg()">احفظ واتصل</button>
+    <div class="alt">أو <a onclick="useLocal()">استخدم محليًا بدون حساب</a></div>`);
+}
+function saveCfg(){
+  const url=document.getElementById('cfgUrl').value.trim().replace(/\/+$/,'');
+  const key=document.getElementById('cfgKey').value.trim();
+  if(!/^https:\/\/.+\.supabase\.co$/.test(url)) return gateErr('الرابط غير صحيح — يجب أن ينتهي بـ supabase.co');
+  if(/^sb_secret_|service_role/i.test(key))
+    return gateErr('هذا مفتاح سرّي — لا يوضع في المتصفح أبدًا. استخدم publishable أو anon');
+  if(!/^(sb_publishable_|eyJ)/.test(key) || key.length<30)
+    return gateErr('المفتاح غير صحيح — يبدأ بـ sb_publishable_ أو eyJ');
+  setCfg({url,key}); start();
+}
+function useLocal(){ setCfg({local:true}); mode='local'; openApp(); }
+
+function showAuth(signup){
+  gateShow(HEAD+`
+    <div class="lead">${signup?'أنشئ حسابك — بياناتك خاصة بك وحدك ولا يراها أي مستخدم آخر.'
+      :'سجّل الدخول للوصول إلى خطتك.'}</div>
+    <div class="err" id="gErr" style="display:none"></div>
+    <div class="field"><label>البريد الإلكتروني</label>
+      <input id="aMail" type="email" dir="ltr" autocomplete="email"></div>
+    <div class="field"><label>كلمة المرور</label>
+      <input id="aPass" type="password" dir="ltr" autocomplete="${signup?'new-password':'current-password'}"></div>
+    <button class="btn" id="aBtn" onclick="${signup?'doSignup()':'doLogin()'}">${signup?'أنشئ الحساب':'دخول'}</button>
+    <div class="alt">${signup
+      ? 'لديك حساب؟ <a onclick="showAuth(false)">سجّل الدخول</a>'
+      : 'ليس لديك حساب؟ <a onclick="showAuth(true)">أنشئ حسابًا</a> · <a onclick="doReset()">نسيت كلمة المرور</a>'}</div>
+    ${(getCfg()||{}).fixed?'':'<div class="alt"><a onclick="changeCfg()">تغيير إعدادات الاتصال</a></div>'}`);
+  const inp=document.getElementById('aPass');
+  if(inp) inp.addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('aBtn').click(); });
+}
+function changeCfg(){ localStorage.removeItem(CFG); start(); }
+
+const AR_ERR = m => {
+  m=String(m||'');
+  if(/Invalid login/i.test(m)) return 'البريد أو كلمة المرور غير صحيحة';
+  if(/already registered|already been registered/i.test(m)) return 'هذا البريد مسجَّل مسبقًا — سجّل الدخول';
+  if(/at least 6|Password should be/i.test(m)) return 'كلمة المرور يجب ألا تقل عن ٦ أحرف';
+  if(/Email not confirmed/i.test(m)) return 'افتح رسالة التأكيد في بريدك أولًا';
+  if(/rate limit|too many/i.test(m)) return 'محاولات كثيرة — انتظر قليلًا';
+  if(/Failed to fetch|NetworkError/i.test(m)) return 'تعذّر الاتصال — تحقق من الإنترنت أو من صحة الرابط';
+  return m;
+};
+const creds = ()=>({m:document.getElementById('aMail').value.trim(),
+                    p:document.getElementById('aPass').value});
+function busy(t){ const b=document.getElementById('aBtn'); if(b){ b.disabled=!!t; b.textContent=t||b.textContent; } }
+
+async function doLogin(){
+  const {m,p}=creds(); if(!m||!p) return gateErr('أدخل البريد وكلمة المرور');
+  busy('جارٍ الدخول…');
+  const {data,error}=await sb.auth.signInWithPassword({email:m,password:p});
+  if(error){ busy(''); showAuth(false); return gateErr(AR_ERR(error.message)); }
+  user=data.user; mode='cloud'; openApp();
+}
+async function doSignup(){
+  const {m,p}=creds(); if(!m||!p) return gateErr('أدخل البريد وكلمة المرور');
+  if(p.length<6) return gateErr('كلمة المرور يجب ألا تقل عن ٦ أحرف');
+  busy('جارٍ الإنشاء…');
+  const {data,error}=await sb.auth.signUp({email:m,password:p});
+  if(error){ busy(''); showAuth(true); return gateErr(AR_ERR(error.message)); }
+  if(data.session){ user=data.user; mode='cloud'; return openApp(); }
+  gateShow(HEAD+`<div class="note">أُنشئ الحساب. افتح رسالة التأكيد في بريدك، ثم عد وسجّل الدخول.</div>
+    <button class="btn" onclick="showAuth(false)">إلى صفحة الدخول</button>`);
+}
+async function doReset(){
+  const m=document.getElementById('aMail').value.trim();
+  if(!m) return gateErr('اكتب بريدك أولًا ثم اضغط نسيت كلمة المرور');
+  const {error}=await sb.auth.resetPasswordForEmail(m);
+  if(error) return gateErr(AR_ERR(error.message));
+  gateErr('أُرسل رابط الاستعادة إلى بريدك');
+}
+async function doLogout(){
+  if(sb) await sb.auth.signOut();
+  user=null; S=JSON.parse(JSON.stringify(DEF));
+  gate().classList.remove('off'); showAuth(false);
+}
+
+function renderAcct(){
+  const el=document.getElementById('acctBox'); if(!el) return;
+  if(mode==='cloud' && user){
+    el.innerHTML=`<div class="lrow" style="border:none;padding-top:0">
+        <div><div class="t" dir="ltr" style="text-align:right">${E(user.email)}</div>
+        <div class="s">بياناتك محفوظة في حسابك ومتزامنة على كل أجهزتك</div></div></div>
+      <button class="btn ghost" onclick="doLogout()">تسجيل الخروج</button>`;
+  } else {
+    el.innerHTML=`<div class="muted" style="margin-bottom:11px">تستخدم التطبيق محليًا بلا حساب.
+      البيانات محفوظة في هذا المتصفح فقط ولا تنتقل لأي جهاز آخر.</div>
+      <button class="btn" onclick="changeCfg()">فعّل الحساب والمزامنة</button>`;
+  }
+}
+
+async function openApp(){
+  gate().classList.add('off');
+  try{ await boot(); syncState('محفوظ'); }
+  catch(e){
+    gate().classList.remove('off');
+    gateShow(HEAD+`<div class="err">تعذّر تحميل بياناتك: ${E(AR_ERR(e.message))}<br>
+      تأكد أنك نفّذت سكربت إنشاء الجدول في الخطوة ٢ من الدليل.</div>
+      <button class="btn ghost" onclick="start()">أعد المحاولة</button>
+      <div class="alt"><a onclick="doLogout()">تسجيل الخروج</a></div>`);
+  }
+}
+
+async function start(){
+  const c=getCfg();
+  if(!c) return showSetup();
+  if(c.local){ mode='local'; return openApp(); }
+  if(typeof supabase==='undefined')
+    return gateShow(HEAD+`<div class="err">تعذّر تحميل مكتبة الاتصال — تحقق من الإنترنت.</div>
+      <button class="btn ghost" onclick="location.reload()">أعد التحميل</button>
+      <div class="alt"><a onclick="useLocal()">استخدم محليًا بدون حساب</a></div>`);
+  try{
+    sb=supabase.createClient(c.url,c.key);
+    const {data}=await sb.auth.getSession();
+    if(data && data.session){ user=data.session.user; mode='cloud'; return openApp(); }
+    showAuth(false);
+  }catch(e){ showSetup(); gateErr(AR_ERR(e.message)); }
+}
+
+start();
+</script>
+</body>
+</html>
