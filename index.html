@@ -160,6 +160,19 @@ main{padding:16px 14px;max-width:900px;margin:0 auto}
 .cbar{height:15px;background:var(--line);border-radius:5px;overflow:hidden}
 .cbar i{display:block;height:100%;border-radius:5px;transition:width .5s cubic-bezier(.22,1,.36,1)}
 .cval{font-size:11.5px;font-weight:600;text-align:left;direction:ltr}
+#simBar{position:sticky;top:0;z-index:60;background:#b8352c;color:#fff;
+  padding:8px 12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;
+  justify-content:space-between;font-size:12.5px;box-shadow:0 2px 10px rgba(0,0,0,.2)}
+#simBar .simtxt{flex:1 1 auto;min-width:180px;line-height:1.6}
+#simBar .simbtns{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+#simBar button{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);
+  color:#fff;font-family:inherit;font-size:12px;font-weight:600;padding:5px 10px;
+  border-radius:8px;cursor:pointer}
+#simBar button:hover{background:rgba(255,255,255,.3)}
+#simBar button.x{background:#fff;color:#b8352c;border-color:#fff}
+#simBar input[type=date]{width:auto;padding:4px 8px;font-size:12px;border-radius:8px;
+  border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.15);color:#fff}
+body.simmode nav{top:auto}
 .gtabs{display:flex;gap:6px;margin:14px 0 12px;background:#eef2f5;padding:4px;border-radius:12px}
 .gtabs button{flex:1;background:none;border:none;font-family:inherit;font-size:13px;font-weight:600;
   color:var(--muted);padding:8px 6px;border-radius:9px;cursor:pointer}
@@ -328,7 +341,7 @@ button.btn.sm{padding:8px 12px;font-size:13px;width:auto}
 
 <header>
   <div class="head-top">
-    <div class="brand"><span class="mark"></span> الالتزامات المالية</div>
+    <div class="brand" id="brand"><span class="mark"></span> الالتزامات المالية</div>
     <div style="display:flex;align-items:center;gap:6px">
       <button class="hbtn" id="btnUndo" onclick="undoAction()" title="تراجع" aria-label="تراجع عن آخر إجراء" disabled>⟲</button>
       <button class="hbtn" id="btnRedo" onclick="redoAction()" title="إعادة" aria-label="إعادة الإجراء" disabled>⟳</button>
@@ -572,8 +585,8 @@ button.btn.sm{padding:8px 12px;font-size:13px;width:auto}
    المفتاح العلني آمن هنا — الحماية في سياسات العزل بقاعدة البيانات.
    لا تضع أبدًا مفتاح service_role أو sb_secret.
    ═══════════════════════════════════════════════════════════════ */
-const SUPA_URL = 'https://flibjizxtdqxofrictuu.supabase.co';
-const SUPA_KEY = 'sb_publishable_0I9BV7hNWR6U1KbWT2oZRA_59w7GDdJ';
+const SUPA_URL = '';   // مثال: 'https://abcdefgh.supabase.co'
+const SUPA_KEY = '';   // مثال: 'sb_publishable_xxxxxxxx'
 
 const KEY='sinking_funds_v1';
 const CFG='sinking_funds_cfg';
@@ -688,7 +701,11 @@ async function boot(){
   past.length=0; future.length=0; lastState=JSON.stringify(S);
   buildNav(); renderAll();
 }
-function persist(){ if(mode==='cloud') flushSave(); else saveRaw(JSON.stringify(S)); }
+function persist(){
+  _share=null;                         /* أي تغيير يُبطل نصيب الشهر القادم المحسوب */
+  if(simOn) return;                    /* المحاكاة لا تمس بياناتك الحقيقية */
+  if(mode==='cloud') flushSave(); else saveRaw(JSON.stringify(S));
+}
 
 /* سجل خطوات للتراجع والإعادة — لقطة كاملة قبل كل تغيير */
 let past=[], future=[], lastState=null;
@@ -726,7 +743,7 @@ function renderHist(){
   if(r) r.disabled=!future.length;
 }
 const nid = ()=> 'x'+(S.seq++)+Date.now().toString(36).slice(-4);
-const nowTS = ()=> new Date().toISOString();
+const nowTS = ()=> clock().toISOString();
 const tsOf = e => e.ts ? new Date(e.ts).getTime() : (parseD(e.date)?parseD(e.date).getTime():0);
 const _dtCache = new Map();
 const arDT = t => {
@@ -760,7 +777,10 @@ const money = n => fmt(n)+' '+((S.settings&&S.settings.currency)||'ر.س');
 /* لا يُقبل رقم سالب في أي حقل مالي */
 const pos = v => { const n=Number(v); return (!isFinite(n)||n<0) ? 0 : R(n); };
 const posOrNull = v => { const n=Number(v); return (!isFinite(n)||n<0) ? null : R(n); };
-const today = ()=>{ const d=new Date(); d.setHours(0,0,0,0); return d; };
+/* ساعة التطبيق: تُزاح في وضع المحاكاة فقط، وكل قراءات الوقت تمر بها */
+let simOffset=0;                       /* بالأيام */
+const clock = ()=>{ const d=new Date(); if(simOffset) d.setDate(d.getDate()+simOffset); return d; };
+const today = ()=>{ const d=clock(); d.setHours(0,0,0,0); return d; };
 const parseD = s => { if(!s) return null; const [y,m,d]=s.split('-').map(Number); const x=new Date(y,m-1,d); x.setHours(0,0,0,0); return x; };
 const isoD = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 const dim = (y,m)=> new Date(y,m+1,0).getDate();
@@ -1004,6 +1024,7 @@ function allocate(amount, opts){
 }
 
 function applyAllocation(res){
+  _share=null;
   for(const it of res.items){ const g=S.goals.find(x=>x.id===it.goalId); if(g) g.saved=R(g.saved+it.amount); }
   for(const it of (res.reserves||[])){ const g=S.goals.find(x=>x.id===it.goalId); if(g) g.reserve=R((g.reserve||0)+it.amount); }
   for(const rp of res.repay){ const l=S.loans.find(x=>x.id===rp.loanId); if(l) l.repaid=R(l.repaid+rp.amount); }
@@ -1029,6 +1050,58 @@ function markNav(){
   TABS.forEach(([k])=>document.getElementById('tab-'+k).classList.toggle('active', k===curTab));
 }
 function go(k){ curTab=k; markNav(); window.scrollTo({top:0,behavior:'smooth'}); }
+
+/* ==================================================================
+   وضع المحاكاة — نسخة في الذاكرة، الحفظ متوقف تمامًا
+================================================================== */
+let simOn=false, simBackup=null;
+
+function simEnter(){
+  if(simOn) return;
+  simBackup=JSON.stringify(S);
+  simOn=true; simOffset=0;
+  document.body.classList.add('simmode');
+  renderSimBar(); renderAll();
+}
+function simExit(){
+  if(!simOn) return;
+  simOn=false; simOffset=0;
+  if(simBackup){ S=Object.assign(JSON.parse(JSON.stringify(DEF)), JSON.parse(simBackup)); simBackup=null; }
+  document.body.classList.remove('simmode');
+  past.length=0; future.length=0; lastState=JSON.stringify(S);
+  renderSimBar(); renderAll(); go('home');
+  toast('خرجت من المحاكاة — بياناتك كما كانت');
+}
+function simShift(days){ if(!simOn) return; simOffset+=days; _share=null; renderSimBar(); renderAll(); }
+function simGoto(v){
+  if(!simOn||!v) return;
+  const t=parseD(v); if(!t) return;
+  const base=new Date(); base.setHours(0,0,0,0);
+  simOffset=Math.round((t-base)/86400000);
+  _share=null; renderSimBar(); renderAll();
+}
+function renderSimBar(){
+  let bar=document.getElementById('simBar');
+  if(!simOn){ if(bar) bar.remove(); return; }
+  if(!bar){
+    bar=document.createElement('div'); bar.id='simBar';
+    document.body.insertBefore(bar, document.body.firstChild);
+  }
+  const dd=Math.abs(simOffset), dir=simOffset>=0?'إلى الأمام':'إلى الخلف';
+  bar.innerHTML=`<div class="simtxt">
+      <b>وضع المحاكاة</b> — اليوم ${arD(isoD(today()))}
+      ${simOffset?`· ${dd} ${dd===1?'يوم':'يومًا'} ${dir}`:'· بلا إزاحة'}
+      · <span style="opacity:.85">لا يُحفظ شيء</span>
+    </div>
+    <div class="simbtns">
+      <button onclick="simShift(30)">+شهر</button>
+      <button onclick="simShift(90)">+3 أشهر</button>
+      <button onclick="simShift(365)">+سنة</button>
+      <button onclick="simShift(-30)">−شهر</button>
+      <input type="date" id="simDate" value="${isoD(today())}" onchange="simGoto(this.value)">
+      <button class="x" onclick="simExit()">خروج</button>
+    </div>`;
+}
 
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('on');
   clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('on'),2200); }
@@ -1244,6 +1317,77 @@ function repFields(){
   const v=document.getElementById('gRepeat').value;
   document.getElementById('repBox').style.display = v==='once'?'none':'';
   document.getElementById('timesWrap').style.display = v==='count'?'':'none';
+}
+
+/* أي التزام قائم يمكن تأجيله ليعود المطلوب داخل القدرة، وإلى متى */
+function capacityOptions(cap){
+  const list=active();
+  const push=(g,k)=>{ const nd=new Date(parseD(g.due)); nd.setMonth(nd.getMonth()+k); return isoD(nd); };
+  const out=[];
+  /* أولًا: تأجيل التزام واحد */
+  for(const g of list){
+    const old=g.due;
+    for(let k=1;k<=60;k++){
+      g.due=push({due:old},k);
+      if(requiredNow()<=cap){ out.push({ids:[g.id], dues:[g.due], label:'أجّل «'+g.name+'» '+k+' '+(k===1?'شهرًا':'أشهر'),
+        detail:'إلى '+arD(g.due), months:k, req:R(requiredNow())}); break; }
+    }
+    g.due=old;
+  }
+  out.sort((a,b)=> a.months-b.months || a.req-b.req);
+  if(out.length) return out.slice(0,4);
+
+  /* لم يكفِ واحد: جرّب تأجيل اثنين معًا */
+  const pairs=[];
+  for(let i=0;i<list.length;i++) for(let j=i+1;j<list.length;j++){
+    const g1=list[i], g2=list[j], o1=g1.due, o2=g2.due;
+    for(let k=1;k<=60;k++){
+      g1.due=push({due:o1},k); g2.due=push({due:o2},k);
+      if(requiredNow()<=cap){
+        pairs.push({ids:[g1.id,g2.id], dues:[g1.due,g2.due],
+          label:'أجّل «'+g1.name+'» و«'+g2.name+'» '+k+' '+(k===1?'شهرًا':'أشهر'),
+          detail:'إلى '+arD(g1.due)+' و'+arD(g2.due), months:k, req:R(requiredNow())});
+        break;
+      }
+    }
+    g1.due=o1; g2.due=o2;
+  }
+  pairs.sort((a,b)=> a.months-b.months || a.req-b.req);
+  return pairs.slice(0,3);
+}
+
+/* يُستدعى بعد أي إجراء قد يرفع المطلوب — لا عند الإضافة وحدها */
+function checkCapacity(before, cause){
+  const cap=S.settings.capacity;
+  if(!cap || !active().length) return;
+  const after=requiredNow();
+  if(after<=cap) return;
+  if(before>cap && after<=before) return;      /* كان متجاوزًا ولم يزدد — لا نكرر التنبيه */
+  const opts=capacityOptions(cap);
+  window._capOpts=opts;
+  openSheet(`<div class="warnbox">
+      <div class="warnhead">⚠ تجاوزت قدرتك الشهرية للادخار</div>
+      <div class="warnbody">
+        ${E(cause||'هذا الإجراء')} رفع التزامك الشهري إلى <b>${money(after)}</b>،
+        وقدرتك <b>${money(cap)}</b> — أي بزيادة <b>${money(R(after-cap))}</b>.
+        <br><br>يمكنك المتابعة، لكن الخطة صارت تطلب منك أكثر مما أقررت أنك تستطيع.
+      </div>
+    </div>
+    ${opts.length?`<h3 style="font-size:13.5px;margin:14px 0 8px">حلول مقترحة${opts.length>1?' — اختر ما يناسبك':''}</h3>
+      ${opts.map((o,i)=>`<div class="choice" onclick="applyCapacityFix(${i})">
+        <b>${E(o.label)}</b>
+        <span>${E(o.detail)} · يصبح المطلوب ${money(o.req)} — داخل قدرتك</span></div>`).join('')}
+      <div class="muted" style="margin-top:8px">هذي أقرب الحلول. يمكنك بدلًا منها خفض قيمة التزام، أو رفع قدرتك من الإعدادات.</div>`
+     :`<div class="banner over" style="margin-top:10px"><div>
+        لا يوجد تأجيل يعيدك داخل قدرتك — حتى بتأجيل التزامين معًا.
+        اخفض قيمة أحد الالتزامات، أو احذف واحدًا، أو راجع قدرتك الشهرية في الإعدادات.</div></div>`}
+    <button class="btn ghost" style="margin-top:12px" onclick="closeSheet()">أتابع كما هو</button>`);
+}
+function applyCapacityFix(i){
+  const o=(window._capOpts||[])[i]; if(!o) return;
+  o.ids.forEach((id,k)=>{ const g=S.goals.find(x=>x.id===id); if(g) g.due=o.dues[k]; });
+  save(); closeSheet(); renderAll();
+  toast(o.ids.length>1?'أُجّل التزامان':'أُجّل الالتزام');
 }
 
 /* أقرب تأجيل يجعل الالتزام يناسب القدرة الشهرية */
@@ -1558,6 +1702,7 @@ function confirmEdit(){
 }
 function doSaveEdit(id,patch){
   const g=S.goals.find(x=>x.id===id); if(!g) return;
+  const capBefore=requiredNow();
   const wasRep=isRep(g);
   Object.assign(g,patch);
   if(!isRep(g)){ g.seq=1;
@@ -1567,6 +1712,7 @@ function doSaveEdit(id,patch){
     freeMove(g.saved-g.target,'فائض عن قيمة «'+g.name+'» بعد تخفيضها'); g.saved=g.target;
   }
   save(); closeSheet(); renderAll(); toast('حُفظ التعديل');
+  checkCapacity(capBefore,'تعديل «'+g.name+'»');
 }
 function delGoal(id){
   const g=S.goals.find(x=>x.id===id);
@@ -1765,7 +1911,14 @@ function coverPreview(id,gap){
     `<div class="ar"><span>يُخصم من</span><b>${cuts.map(x=>E(x.name)+' '+fmt(x.amount)+(fromRes?' (احتياطي)':'')).join(' · ')||'—'}</b></div>
     ${taken<rest?`<div class="ar"><span>الباقي من خارج الخطة</span><b class="num">${money(rest-taken)}</b></div>`:''}
     <div class="ar"><span>مبلغك الشهري قبل</span><b class="num">${money(before)}</b></div>
-    <div class="ar tot"><span>وبعد</span><b class="num ${after>before?'neg':''}">${money(after)}</b></div>`;
+    <div class="ar tot"><span>وبعد</span><b class="num ${after>before?'neg':''}">${money(after)}</b></div>`
+    + ((S.settings.capacity>0 && after>S.settings.capacity)
+       ? `<div style="border-top:1px dashed var(--line);margin-top:8px;padding-top:8px;
+            font-size:12.5px;color:#7d2a25;font-weight:600">
+            ⚠ يتجاوز قدرتك الشهرية (${money(S.settings.capacity)}) بـ ${money(R(after-S.settings.capacity))}
+            <div style="font-weight:400;color:var(--muted);margin-top:3px">
+              ستُعرض عليك حلول بعد التأكيد.</div></div>`
+       : '');
 }
 
 /* التكرار محدد مسبقًا — نعرض الدورة القادمة ونتيح إيقافها فقط */
@@ -1842,7 +1995,7 @@ function pick(grp,val){
   if(grp==='rc'){ const w=document.getElementById('cycWrap'); if(w) w.style.display = val==='yes'?'':'none'; }
 }
 function doSpend(id,amount){
-  const _reqBefore=autoMonthly();
+  const _reqBefore=autoMonthly(), _capBefore=requiredNow();
   const note=window._spNote||'';
   const g=S.goals.find(x=>x.id===id);
   const diff=R(g.saved-amount);
@@ -1912,7 +2065,7 @@ function doSpend(id,amount){
   save(); closeSheet(); renderAll();
   window._cover=null;
   toast(outside>0? 'سُجّل الصرف — '+fmt(outside)+' من خارج الخطة' : 'سُجّل الصرف');
-  maybeDropSheet(_reqBefore);
+  if(!maybeDropSheet(_reqBefore)) checkCapacity(_capBefore,'تغطية نقص الصرف');
 }
 
 /* ---------- الاستلاف ---------- */
@@ -1939,6 +2092,7 @@ function pickLoan(m){
   document.getElementById('instWrap').style.display = m==='inst'?'':'none';
 }
 function doLoan(id){
+  const capBefore=requiredNow();
   const g=S.goals.find(x=>x.id===id);
   const a=pos(document.getElementById('lnAmt').value);
   if(a<=0) return toast('أدخل مبلغًا أكبر من صفر');
@@ -1950,6 +2104,7 @@ function doLoan(id){
     reason:document.getElementById('lnWhy').value.trim(),date:isoD(today()),
     mode,installments:mode==='inst'?n:1,repaid:0});
   save(); closeSheet(); renderAll(); toast('سُجّل الاستلاف');
+  checkCapacity(capBefore,'الاستلاف وسداده');
 }
 
 /* ---------- التحويل ---------- */
@@ -2278,10 +2433,10 @@ function commitWish(){
 /* ---------- السجل ---------- */
 /* بعد اكتمال التزام: هل ينخفض المبلغ الشهري؟ اعرض الخيار بدل الخفض الصامت */
 function maybeDropSheet(before){
-  if(!active().length) return;
+  if(!active().length) return false;
   const after=autoMonthly();
-  if(!(before-after>1)) return;
-  if(S.pinned && S.pinned>=before) return;   /* مثبّت أصلًا على هذا المستوى */
+  if(!(before-after>1)) return false;
+  if(S.pinned && S.pinned>=before) return false;   /* مثبّت أصلًا على هذا المستوى */
   const keep=R(before), lower=R(after);
   const f=finishAt(keep), ld=lastDue();
   const saveMonths = (f&&ld)? Math.max(0, monthsLeft(ld)-f.months) : 0;
@@ -2295,6 +2450,7 @@ function maybeDropSheet(before){
       <span>${f?'تنتهي التزاماتك الحالية في '+arD(f.due)+(saveMonths>0?` — أي قبل ${saveMonths} ${saveMonths===1?'شهر':'أشهر'}`:''):'تنتهي مبكرًا'}</span></div>
     <button class="btn" style="margin-top:12px" onclick="applyDrop(${keep})">تأكيد</button>`);
   window._drop='lower';
+  return true;
 }
 function pickDrop(v){
   window._drop=v;
@@ -3265,6 +3421,34 @@ window.addEventListener('unhandledrejection', e=>{
   if(/JWT|Failed to fetch|NetworkError/i.test(String(m))) return;   /* تُعالَج في طبقة الحفظ */
   crashScreen(String(m));
 });
+
+/* ضغطة مطوّلة على الشعار (ثانيتان) تفتح أدوات التجربة */
+(function(){
+  const b=document.getElementById('brand'); if(!b) return;
+  b.style.userSelect='none'; b.style.webkitUserSelect='none';
+  let timer=null;
+  const start=()=>{ clearTimeout(timer); timer=setTimeout(()=>{ if(!simOn) simAsk(); },2000); };
+  const stop=()=>clearTimeout(timer);
+  ['mousedown','touchstart'].forEach(e=>b.addEventListener(e,start,{passive:true}));
+  ['mouseup','mouseleave','touchend','touchcancel','touchmove'].forEach(e=>b.addEventListener(e,stop,{passive:true}));
+  b.addEventListener('contextmenu',e=>e.preventDefault());
+})();
+
+function simAsk(){
+  openSheet(`<h2>أدوات التجربة</h2>
+    <div class="lead">وضع المحاكاة يتيح لك تقديم الوقت أو تأخيره لتجرّب سيناريوهات مستقبلية على بياناتك الحقيقية.</div>
+    <div class="alloc">
+      <div class="ar"><span>يعمل على</span><b>نسخة في الذاكرة</b></div>
+      <div class="ar"><span>الحفظ</span><b>متوقف تمامًا</b></div>
+      <div class="ar tot"><span>عند الخروج</span><b>تعود بياناتك كما هي</b></div>
+    </div>
+    <div class="banner soon" style="margin-top:10px"><div>
+      كل ما تسجّله في المحاكاة — تحويلات وصرف وحذف — يختفي عند الخروج ولا يصل حسابك.</div></div>
+    <div class="btnrow" style="margin-top:14px">
+      <button class="btn danger" onclick="closeSheet();simEnter()">ادخل المحاكاة</button>
+      <button class="btn ghost" onclick="closeSheet()">تراجع</button>
+    </div>`);
+}
 
 start();
 </script>
