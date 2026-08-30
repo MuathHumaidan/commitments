@@ -585,8 +585,8 @@ button.btn.sm{padding:8px 12px;font-size:13px;width:auto}
    المفتاح العلني آمن هنا — الحماية في سياسات العزل بقاعدة البيانات.
    لا تضع أبدًا مفتاح service_role أو sb_secret.
    ═══════════════════════════════════════════════════════════════ */
-const SUPA_URL = 'https://flibjizxtdqxofrictuu.supabase.co';
-const SUPA_KEY = 'sb_publishable_0I9BV7hNWR6U1KbWT2oZRA_59w7GDdJ';
+const SUPA_URL = '';   // مثال: 'https://abcdefgh.supabase.co'
+const SUPA_KEY = '';   // مثال: 'sb_publishable_xxxxxxxx'
 
 const KEY='sinking_funds_v1';
 const CFG='sinking_funds_cfg';
@@ -688,6 +688,7 @@ const DEF = {
 let S = JSON.parse(JSON.stringify(DEF));
 
 async function boot(){
+  simReset();
   const raw = await loadRaw();
   if(raw){ try{ S = Object.assign(JSON.parse(JSON.stringify(DEF)), JSON.parse(raw)); }catch(e){} }
   /* ترحيل: الالتزامات القديمة بلا حقول تكرار تُعامل كمرة واحدة */
@@ -1060,6 +1061,7 @@ function simEnter(){
   if(simOn) return;
   simBackup=JSON.stringify(S);
   simOn=true; simOffset=0;
+  past.length=0; future.length=0; lastState=simBackup;   /* سجل تراجع مستقل */
   document.body.classList.add('simmode');
   renderSimBar(); renderAll();
 }
@@ -1071,6 +1073,12 @@ function simExit(){
   past.length=0; future.length=0; lastState=JSON.stringify(S);
   renderSimBar(); renderAll(); go('home');
   toast('خرجت من المحاكاة — بياناتك كما كانت');
+}
+/* إنهاء صامت بلا استعادة — يُستخدم عند الخروج من الحساب أو إعادة التحميل،
+   حيث تُجلب البيانات من الخادم على أي حال */
+function simReset(){
+  simOn=false; simOffset=0; simBackup=null;
+  try{ document.body.classList.remove('simmode'); renderSimBar(); }catch(e){}
 }
 function simShift(days){ if(!simOn) return; simOffset+=days; _share=null; renderSimBar(); renderAll(); }
 function simGoto(v){
@@ -3099,6 +3107,7 @@ function dl(blob,name){
 }
 /* يطوي الحركات القديمة في ملخص سنوي واحد بدل حذفها */
 function archiveOld(){
+  if(simBlock('الأرشفة')) return;
   const yrs=Math.max(1,Number(document.getElementById('arcYears').value)||2);
   const cut=new Date(today()); cut.setFullYear(cut.getFullYear()-yrs);
   const cutS=isoD(cut);
@@ -3134,7 +3143,14 @@ function doArchive(cutS){
   save(); closeSheet(); renderAll(); toast('طُويت الحركات القديمة');
 }
 
+/* عمليات لا معنى لها — أو خطر منها — أثناء المحاكاة */
+function simBlock(what){
+  if(!simOn) return false;
+  toast(what+' غير متاح في وضع المحاكاة — اخرج منها أولًا');
+  return true;
+}
 function exportData(){
+  if(simBlock('التصدير')) return;
   S.lastExport=isoD(today());
   dl(new Blob([JSON.stringify(S,null,2)],{type:'application/json'}),
      'نسخة-الالتزامات-'+isoD(today())+'.json');
@@ -3142,6 +3158,7 @@ function exportData(){
   toast('صُدّرت البيانات');
 }
 function importData(e){
+  if(simBlock('الاستيراد')){ e.target.value=''; return; }
   const f=e.target.files[0]; if(!f) return;
   const r=new FileReader();
   r.onload=()=>{ try{
@@ -3153,6 +3170,7 @@ function importData(e){
   r.readAsText(f); e.target.value='';
 }
 function wipeAll(){
+  if(simBlock('مسح البيانات')) return;
   openSheet(`<div class="warnbox">
       <div class="warnhead">⚠ مسح كل بياناتك</div>
       <div class="warnbody">تُحذف كل الالتزامات والتحويلات والسجل والسلة نهائيًا${mode==='cloud'?'، ومن حسابك على كل أجهزتك':''}.
@@ -3319,6 +3337,7 @@ async function doChangePass(){
   closeSheet(); toast('تغيّرت كلمة المرور');
 }
 async function doLogout(){
+  simReset();                          /* وإلا بقي الحفظ معطلًا بعد إعادة الدخول */
   if(sb) await sb.auth.signOut();
   user=null; S=JSON.parse(JSON.stringify(DEF));
   gate().classList.remove('off'); showAuth(false);
